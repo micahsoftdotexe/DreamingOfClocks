@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black"
+    android:orientation="vertical"
+    android:gravity="center">
+
+    <com.micahsoftdotexe.dreamingofclocks.uicomponents.ResizeableTextClock
+        android:id="@+id/textClockScreensaver"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:textColor="@android:color/white"
+        android:textSize="64sp"
+        android:gravity="center"
+        android:format24Hour="HH:mm:ss"
+        android:format12Hour="hh:mm:ss a" />
+
+    <TextView
+        android:id="@+id/dateTextScreensaver"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:gravity="center"
+        android:padding="10dp"
+        android:text="@string/defaultDate"
+        android:textSize="20sp"
+        android:textColor="@android:color/white" />
+
+</LinearLayout>
