@@ -33,11 +33,18 @@ class ScreensaverService: DreamService() {
         }
     }
 
+    override fun onCreate() {
+        super.onCreate()
+        isInteractive = false
+        isFullscreen = true
+        isScreenBright = true
+    }
+
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         // not interactive, full screen
-        isInteractive = false
-        isFullscreen = true
+//        isInteractive = false
+//        isFullscreen = true
 
         setContentView(R.layout.screensaver_layout)
         textClock = findViewById(R.id.textClockScreensaver)
@@ -59,7 +66,8 @@ class ScreensaverService: DreamService() {
 
     private fun applyPreferences() {
         val prefs = getSharedPreferences("clock_prefs", MODE_PRIVATE)
-        val is24Hour = prefs.getBoolean("pref_24_hour", true)
+        val is24Hour = prefs.getBoolean("pref_24_hour", false)
+        val showSeconds = prefs.getBoolean("pref_show_seconds", false)
         val showDate = prefs.getBoolean("pref_show_date", true)
         val bgMode = prefs.getString("pref_bg_mode", "color") ?: "color"
         val bgColor = prefs.getString("pref_bg_color", "#000000") ?: "#000000"
@@ -67,14 +75,11 @@ class ScreensaverService: DreamService() {
         val textColor = prefs.getString("pref_text_color", "#FFFFFF") ?: "#FFFFFF"
 
         // Clock format
-        if (is24Hour) {
-            textClock.format24Hour = "HH:mm:ss"
-            textClock.format12Hour = "HH:mm:ss"
-        } else {
-            textClock.format24Hour = "hh:mm:ss a"
-            textClock.format12Hour = "hh:mm:ss a"
-        }
-
+        val secondString = if (showSeconds) ":ss" else ""
+        val hourString = if (is24Hour) "HH" else "hh"
+        val ampmString = if (is24Hour) "" else " a"
+        textClock.format24Hour = "$hourString:mm$secondString$ampmString"
+        textClock.format12Hour = "$hourString:mm$secondString$ampmString"
         // Date visibility
         dateText.visibility = if (showDate) View.VISIBLE else View.GONE
 
