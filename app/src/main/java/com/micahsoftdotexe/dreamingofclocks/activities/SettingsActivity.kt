@@ -1,11 +1,6 @@
 package com.micahsoftdotexe.dreamingofclocks.activities
 
-import android.app.Activity
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,11 +12,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,8 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import com.micahsoftdotexe.dreamingofclocks.uicomponents.colorpicker.ColorPicker
-import io.github.ismoy.imagepickerkmp.presentation.ui.components.GalleryPickerLauncher
-
+import com.micahsoftdotexe.dreamingofclocks.utils.rememberImagePickerLaunchers
 
 // --- New: Settings UI and persistence ---
 private const val PREFS_NAME = "clock_prefs"
@@ -74,41 +68,29 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
     var bgColor by remember { mutableStateOf(prefs.getString(KEY_BG_COLOR, "#000000") ?: "#000000") }
     var bgImageUri by remember { mutableStateOf(prefs.getString(KEY_BG_IMAGE_URI, null)) }
     var textColor by remember { mutableStateOf(prefs.getString(KEY_TEXT_COLOR, "#FFFFFF") ?: "#FFFFFF") }
-    var showGallery by remember { mutableStateOf(false) }
-    var imageBackgroundSelectionUi by remember { mutableStateOf(false) }
+
+    // Set up image picker with proper permissions
+    val imagePickerLaunchers = rememberImagePickerLaunchers(
+        onImageSelected = { uri ->
+            if (uri != null) {
+                val uriString = uri.toString()
+                prefs.edit {
+                    putString(KEY_BG_IMAGE_URI, uriString)
+                    putString(KEY_BG_MODE, "image")
+                }
+                bgImageUri = uriString
+                bgMode = "image"
+            }
+        },
+        onPermissionDenied = {
+            // Optionally revert to color mode if user denies permission
+            bgMode = "color"
+            prefs.edit { putString(KEY_BG_MODE, "color") }
+        }
+    )
 
     // default palette (can be extended)
     val colorPresets = listOf("#000000", "#FFFFFF", "#0D47A1", "#4CAF50", "#FF5722", "#607D8B")
-
-    if (showGallery) {
-        @Suppress("AssignedValueIsNeverRead")
-        GalleryPickerLauncher(
-            onPhotosSelected = { photos ->
-                if (photos.isNotEmpty()) {
-                    val uri = photos[0].uri
-                    prefs.edit { putString(KEY_BG_IMAGE_URI, uri) }
-                    prefs.edit { putString(KEY_BG_MODE, "image") }
-                    bgImageUri = uri
-                    bgMode = "image"
-                }
-                showGallery = false
-            },
-            onError = {
-                showGallery = false
-                //display error message
-                if (context is Activity) {
-                    // display toast message
-                    context.runOnUiThread {
-                        android.widget.Toast.makeText(context, "Error picking image: $it", android.widget.Toast.LENGTH_SHORT).show()
-                    }
-                }
-            },
-            onDismiss = {
-                showGallery = false
-            }
-
-        )
-    }
 
     fun saveBoolean(key: String, value: Boolean) {
         prefs.edit { putBoolean(key, value) }
@@ -175,10 +157,14 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
                     })
 
                     RadioButton(selected = (bgMode == "image"), onClick = {
-                        bgMode = "image"; saveString(KEY_BG_MODE, "image"); showGallery = true
+                        bgMode = "image"
+                        saveString(KEY_BG_MODE, "image")
+                        imagePickerLaunchers.requestImageSelection()
                     })
                     Text("Image", modifier = Modifier.padding(top = 12.dp).clickable {
-                        bgMode = "image"; saveString(KEY_BG_MODE, "image"); showGallery = true
+                        bgMode = "image"
+                        saveString(KEY_BG_MODE, "image")
+                        imagePickerLaunchers.requestImageSelection()
                     })
                 }
 
@@ -191,14 +177,13 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
                             saveString(KEY_BG_COLOR, hex)
                         }
                     )
-                } else if (bgMode == "image" || imageBackgroundSelectionUi) {
+                } else {
                     Text("Selected image: ${if (!bgImageUri.isNullOrEmpty()) bgImageUri else "none"}")
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                        Button(onClick = { showGallery = true }) {
+                        Button(onClick = { imagePickerLaunchers.requestImageSelection() }) {
                             Text("Choose image")
                         }
                         Button(onClick = {
-                            // remove saved URI
                             prefs.edit { remove(KEY_BG_IMAGE_URI) }
                             bgImageUri = null
                         }) {

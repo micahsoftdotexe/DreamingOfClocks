@@ -6,8 +6,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.BitmapFactory
 import android.graphics.Color
-import android.graphics.drawable.BitmapDrawable
-import android.net.Uri
 import android.service.dreams.DreamService
 import android.view.View
 import android.widget.TextClock
@@ -74,12 +72,16 @@ class ScreensaverService: DreamService() {
         val bgImageUri = prefs.getString("pref_bg_image_uri", null)
         val textColor = prefs.getString("pref_text_color", "#FFFFFF") ?: "#FFFFFF"
 
+        // Get the root layout
+        val rootLayout = findViewById<View>(R.id.screensaver_root)
+
         // Clock format
         val secondString = if (showSeconds) ":ss" else ""
         val hourString = if (is24Hour) "HH" else "hh"
         val ampmString = if (is24Hour) "" else " a"
         textClock.format24Hour = "$hourString:mm$secondString$ampmString"
         textClock.format12Hour = "$hourString:mm$secondString$ampmString"
+
         // Date visibility
         dateText.visibility = if (showDate) View.VISIBLE else View.GONE
 
@@ -88,7 +90,7 @@ class ScreensaverService: DreamService() {
             val tc = textColor.toColorInt()
             textClock.setTextColor(tc)
             dateText.setTextColor(tc)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // ignore parse errors
         }
 
@@ -99,21 +101,21 @@ class ScreensaverService: DreamService() {
                 val input = contentResolver.openInputStream(uri)
                 input?.use {
                     val bmp = BitmapFactory.decodeStream(it)
-                    window?.decorView?.background = bmp.toDrawable(resources)
+                    rootLayout?.background = bmp.toDrawable(resources)
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // fallback to color if image fails
                 try {
-                    window?.decorView?.setBackgroundColor(bgColor.toColorInt())
-                } catch (ex: Exception) {
-                    window?.decorView?.setBackgroundColor(Color.BLACK)
+                    rootLayout?.setBackgroundColor(bgColor.toColorInt())
+                } catch (_: Exception) {
+                    rootLayout?.setBackgroundColor(Color.BLACK)
                 }
             }
         } else {
             try {
-                window?.decorView?.setBackgroundColor(bgColor.toColorInt())
-            } catch (e: Exception) {
-                window?.decorView?.setBackgroundColor(Color.BLACK)
+                rootLayout?.setBackgroundColor(bgColor.toColorInt())
+            } catch (_: Exception) {
+                rootLayout?.setBackgroundColor(Color.BLACK)
             }
         }
     }
