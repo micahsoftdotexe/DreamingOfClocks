@@ -55,6 +55,7 @@ private const val KEY_BG_COLOR = "pref_bg_color" // hex string like #000000
 private const val KEY_BG_IMAGE_URI = "pref_bg_image_uri" // uri string
 private const val KEY_TEXT_COLOR = "pref_text_color" // hex string
 private const val KEY_SHOW_ALARM = "pref_show_alarm" // boolean
+private const val KEY_SHOW_MEDIA = "pref_show_media" // boolean
 
 // helper composables for grouping
 @Composable
@@ -80,6 +81,7 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
     var showSeconds by remember { mutableStateOf(prefs.getBoolean(KEY_SHOW_SECONDS, false)) }
     var showDate by remember { mutableStateOf(prefs.getBoolean(KEY_SHOW_DATE, true)) }
     var showAlarm by remember { mutableStateOf(prefs.getBoolean(KEY_SHOW_ALARM, true)) }
+    var showMedia by remember { mutableStateOf(prefs.getBoolean(KEY_SHOW_MEDIA, false)) }
     var bgMode by remember { mutableStateOf(prefs.getString(KEY_BG_MODE, "color") ?: "color") }
     var bgColor by remember { mutableStateOf(prefs.getString(KEY_BG_COLOR, "#000000") ?: "#000000") }
     var bgImageUri by remember { mutableStateOf(prefs.getString(KEY_BG_IMAGE_URI, null)) }
@@ -287,6 +289,19 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
                     Switch(checked = showAlarm, onCheckedChange = {
                         showAlarm = it
                         saveBoolean(KEY_SHOW_ALARM, it)
+                    })
+                }
+
+                SubHeading("Now Playing")
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Show media info")
+                    Switch(checked = showMedia, onCheckedChange = {
+                        showMedia = it
+                        saveBoolean(KEY_SHOW_MEDIA, it)
                     })
                 }
             }

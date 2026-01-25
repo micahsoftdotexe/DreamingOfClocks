@@ -13,19 +13,38 @@ import android.widget.TextClock
 import android.widget.TextView
 import com.micahsoftdotexe.dreamingofclocks.R
 import com.micahsoftdotexe.dreamingofclocks.utils.AlarmHelper
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.micahsoftdotexe.dreamingofclocks.utils.MediaMetadataHelper
+import android.os.Handler
+import android.os.Looper
 import androidx.core.graphics.toColorInt
 import androidx.core.net.toUri
 import androidx.core.graphics.drawable.toDrawable
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class ScreensaverService: DreamService() {
 
     private val dateFormatter = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault())
     private lateinit var dateText: TextView
     private lateinit var alarmText: TextView
+    private lateinit var mediaText: TextView
     private lateinit var textClock: TextClock
+
+    private var mediaHelper: MediaMetadataHelper? = null
+    private val handler = Handler(Looper.getMainLooper())
+    private var playPauseAnimationIndex = 0
+    private val playIcon = "▶"
+    private val pauseIcon = "⏸"
+
+    private val playPauseAnimationRunnable = object : Runnable {
+        override fun run() {
+            if (mediaText.visibility == View.VISIBLE) {
+                updateMediaDisplay()
+                handler.postDelayed(this, 500) // Update animation every 500ms
+            }
+        }
+    }
 
     private val timeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -55,6 +74,7 @@ class ScreensaverService: DreamService() {
         textClock = findViewById(R.id.textClockScreensaver)
         dateText = findViewById(R.id.dateTextScreensaver)
         alarmText = findViewById(R.id.alarmTextScreensaver)
+        mediaText = findViewById(R.id.mediaTextScreensaver)
 
         // Ensure formats include seconds (may be overridden by preferences)
         textClock.format24Hour = "HH:mm:ss"
@@ -76,6 +96,13 @@ class ScreensaverService: DreamService() {
         }
         registerReceiver(alarmUpdateReceiver, alarmUpdateFilter)
         registerReceiver(timeReceiver, filter)
+
+        // Initialize media helper
+        val prefs = getSharedPreferences("clock_prefs", MODE_PRIVATE)
+        val showMedia = prefs.getBoolean("pref_show_media", false)
+        if (showMedia) {
+            setupMediaListener()
+        }
     }
 
     private fun applyPreferences() {
@@ -84,6 +111,7 @@ class ScreensaverService: DreamService() {
         val showSeconds = prefs.getBoolean("pref_show_seconds", false)
         val showDate = prefs.getBoolean("pref_show_date", true)
         val showAlarm = prefs.getBoolean("pref_show_alarm", true)
+        val showMedia = prefs.getBoolean("pref_show_media", false)
         val bgMode = prefs.getString("pref_bg_mode", "color") ?: "color"
         val bgColor = prefs.getString("pref_bg_color", "#000000") ?: "#000000"
         val bgImageUri = prefs.getString("pref_bg_image_uri", null)
@@ -107,6 +135,15 @@ class ScreensaverService: DreamService() {
             updateAlarm()
         } else {
             alarmText.visibility = View.GONE
+        }
+
+        // Media visibility and update
+        if (showMedia) {
+            setupMediaListener()
+        } else {
+            mediaText.visibility = View.GONE
+            mediaHelper?.stopListening()
+            handler.removeCallbacks(playPauseAnimationRunnable)
         }
 
         // Text color
@@ -167,9 +204,42 @@ class ScreensaverService: DreamService() {
         }
     }
 
+    private fun setupMediaListener() {
+        mediaHelper = MediaMetadataHelper(this).apply {
+            startListening(object : MediaMetadataHelper.MediaCallback {
+                override fun onMediaInfoChanged(info: MediaMetadataHelper.MediaInfo?) {
+                    handler.post {
+                        updateMediaDisplay(info)
+                    }
+                }
+            })
+        }
+        handler.post(playPauseAnimationRunnable)
+    }
+
+    private fun updateMediaDisplay(info: MediaMetadataHelper.MediaInfo? = null) {
+        val mediaInfo = info ?: mediaHelper?.getCurrentMediaInfo()
+
+        if (mediaInfo == null) {
+            mediaText.visibility = View.GONE
+            return
+        }
+
+        val icon = if (mediaInfo.isPlaying) {
+            playIcon
+        } else {
+            pauseIcon
+        }
+
+        mediaText.text = "$icon ${mediaInfo.title} - ${mediaInfo.artist}"
+        mediaText.visibility = View.VISIBLE
+    }
+
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         unregisterReceiver(timeReceiver)
-        // no handler callbacks to remove anymore
+        unregisterReceiver(alarmUpdateReceiver)
+        mediaHelper?.stopListening()
+        handler.removeCallbacks(playPauseAnimationRunnable)
     }
 }

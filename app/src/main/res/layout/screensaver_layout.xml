@@ -6,6 +6,17 @@
     android:orientation="vertical"
     android:gravity="center">
 
+    <TextView
+        android:id="@+id/mediaTextScreensaver"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:gravity="center"
+        android:padding="5dp"
+        android:textSize="14sp"
+        android:textColor="@android:color/white"
+        android:visibility="gone" />
+
     <com.micahsoftdotexe.dreamingofclocks.uicomponents.ResizeableTextClock
         android:id="@+id/textClockScreensaver"
         android:layout_width="wrap_content"
