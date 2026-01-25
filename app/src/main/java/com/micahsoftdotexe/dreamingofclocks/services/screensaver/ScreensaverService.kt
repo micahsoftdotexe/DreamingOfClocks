@@ -1,5 +1,6 @@
 package com.micahsoftdotexe.dreamingofclocks.services.screensaver
 
+import android.app.AlarmManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -11,6 +12,7 @@ import android.view.View
 import android.widget.TextClock
 import android.widget.TextView
 import com.micahsoftdotexe.dreamingofclocks.R
+import com.micahsoftdotexe.dreamingofclocks.utils.AlarmHelper
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -22,6 +24,7 @@ class ScreensaverService: DreamService() {
 
     private val dateFormatter = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault())
     private lateinit var dateText: TextView
+    private lateinit var alarmText: TextView
     private lateinit var textClock: TextClock
 
     private val timeReceiver = object : BroadcastReceiver() {
@@ -30,6 +33,13 @@ class ScreensaverService: DreamService() {
             updateDate()
         }
     }
+
+    private val alarmUpdateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            updateAlarm()
+        }
+    }
+
 
     override fun onCreate() {
         super.onCreate()
@@ -40,17 +50,17 @@ class ScreensaverService: DreamService() {
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        // not interactive, full screen
-//        isInteractive = false
-//        isFullscreen = true
 
         setContentView(R.layout.screensaver_layout)
         textClock = findViewById(R.id.textClockScreensaver)
         dateText = findViewById(R.id.dateTextScreensaver)
+        alarmText = findViewById(R.id.alarmTextScreensaver)
+
         // Ensure formats include seconds (may be overridden by preferences)
         textClock.format24Hour = "HH:mm:ss"
         textClock.format12Hour = "hh:mm:ss a"
         updateDate()
+        updateAlarm()
 
         // Apply saved settings
         applyPreferences()
@@ -59,6 +69,12 @@ class ScreensaverService: DreamService() {
             addAction(Intent.ACTION_DATE_CHANGED)
             addAction(Intent.ACTION_TIMEZONE_CHANGED)
         }
+        val alarmUpdateFilter = IntentFilter().apply {
+            addAction(Intent.ACTION_TIMEZONE_CHANGED)
+            addAction(Intent.ACTION_TIME_TICK)
+            addAction(AlarmManager.ACTION_NEXT_ALARM_CLOCK_CHANGED)
+        }
+        registerReceiver(alarmUpdateReceiver, alarmUpdateFilter)
         registerReceiver(timeReceiver, filter)
     }
 
@@ -67,6 +83,7 @@ class ScreensaverService: DreamService() {
         val is24Hour = prefs.getBoolean("pref_24_hour", false)
         val showSeconds = prefs.getBoolean("pref_show_seconds", false)
         val showDate = prefs.getBoolean("pref_show_date", true)
+        val showAlarm = prefs.getBoolean("pref_show_alarm", true)
         val bgMode = prefs.getString("pref_bg_mode", "color") ?: "color"
         val bgColor = prefs.getString("pref_bg_color", "#000000") ?: "#000000"
         val bgImageUri = prefs.getString("pref_bg_image_uri", null)
@@ -85,11 +102,19 @@ class ScreensaverService: DreamService() {
         // Date visibility
         dateText.visibility = if (showDate) View.VISIBLE else View.GONE
 
+        // Alarm visibility and update
+        if (showAlarm) {
+            updateAlarm()
+        } else {
+            alarmText.visibility = View.GONE
+        }
+
         // Text color
         try {
             val tc = textColor.toColorInt()
             textClock.setTextColor(tc)
             dateText.setTextColor(tc)
+            alarmText.setTextColor(tc)
         } catch (_: Exception) {
             // ignore parse errors
         }
@@ -122,6 +147,24 @@ class ScreensaverService: DreamService() {
 
     private fun updateDate() {
         dateText.text = dateFormatter.format(Date())
+    }
+
+    private fun updateAlarm() {
+        val prefs = getSharedPreferences("clock_prefs", MODE_PRIVATE)
+        val showAlarm = prefs.getBoolean("pref_show_alarm", true)
+
+        if (!showAlarm) {
+            alarmText.visibility = View.GONE
+            return
+        }
+
+        val alarmInfo = AlarmHelper.formatNextAlarmCountdown(this)
+        if (alarmInfo != null) {
+            alarmText.text = alarmInfo
+            alarmText.visibility = View.VISIBLE
+        } else {
+            alarmText.visibility = View.GONE
+        }
     }
 
     override fun onDetachedFromWindow() {

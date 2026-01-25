@@ -54,6 +54,7 @@ private const val KEY_BG_MODE = "pref_bg_mode" // "color" or "image"
 private const val KEY_BG_COLOR = "pref_bg_color" // hex string like #000000
 private const val KEY_BG_IMAGE_URI = "pref_bg_image_uri" // uri string
 private const val KEY_TEXT_COLOR = "pref_text_color" // hex string
+private const val KEY_SHOW_ALARM = "pref_show_alarm" // boolean
 
 // helper composables for grouping
 @Composable
@@ -78,6 +79,7 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
     var is24Hour by remember { mutableStateOf(prefs.getBoolean(KEY_24_HOUR, false)) }
     var showSeconds by remember { mutableStateOf(prefs.getBoolean(KEY_SHOW_SECONDS, false)) }
     var showDate by remember { mutableStateOf(prefs.getBoolean(KEY_SHOW_DATE, true)) }
+    var showAlarm by remember { mutableStateOf(prefs.getBoolean(KEY_SHOW_ALARM, true)) }
     var bgMode by remember { mutableStateOf(prefs.getString(KEY_BG_MODE, "color") ?: "color") }
     var bgColor by remember { mutableStateOf(prefs.getString(KEY_BG_COLOR, "#000000") ?: "#000000") }
     var bgImageUri by remember { mutableStateOf(prefs.getString(KEY_BG_IMAGE_URI, null)) }
@@ -275,8 +277,18 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
 
             // Features section (placeholder for feature toggles / extras)
             Section("Features") {
-                // ...existing or future feature toggles can go here...
-                // kept minimal for now — existing feature-related settings were moved into sections above
+                SubHeading("Alarm")
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Show next alarm")
+                    Switch(checked = showAlarm, onCheckedChange = {
+                        showAlarm = it
+                        saveBoolean(KEY_SHOW_ALARM, it)
+                    })
+                }
             }
         }
     }
