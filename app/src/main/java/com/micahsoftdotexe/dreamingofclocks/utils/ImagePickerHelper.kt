@@ -121,17 +121,28 @@ fun rememberImagePickerLaunchers(
     }
 
     // Permission request launcher
+    // Permission request launcher
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        val allGranted = permissions.values.all { it }
-        if (allGranted) {
+        val canAccessImages = when {
+            // Android 14+: Check if either full access OR partial access was granted
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
+                permissions[Manifest.permission.READ_MEDIA_IMAGES] == true ||
+                        permissions[Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED] == true
+            }
+            // Android 13 and below: All requested permissions must be granted
+            else -> permissions.values.all { it }
+        }
+
+        if (canAccessImages) {
             launchImagePicker(photoPickerLauncher, legacyPickerLauncher)
         } else {
             helper.showToast("Permission denied. Cannot select images.")
             onPermissionDenied()
         }
     }
+
 
     return ImagePickerLaunchers(
         helper = helper,
