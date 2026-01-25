@@ -23,7 +23,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:gravity="center"
-        android:padding="10dp"
+        android:padding="5dp"
         android:text="@string/defaultDate"
         android:textSize="20sp"
         android:textColor="@android:color/white" />
@@ -34,7 +34,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:gravity="center"
-        android:padding="10dp"
+        android:padding="5dp"
         android:textSize="16sp"
         android:textColor="@android:color/white"
         android:visibility="gone" />
