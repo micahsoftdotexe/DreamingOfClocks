@@ -42,20 +42,18 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import coil3.compose.rememberAsyncImagePainter
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_24_HOUR
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_BG_COLOR
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_BG_IMAGE_URI
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_BG_MODE
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_SHOW_ALARM
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_SHOW_DATE
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_SHOW_MEDIA
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_SHOW_SECONDS
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_TEXT_COLOR
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.PREFS_NAME
 import com.micahsoftdotexe.dreamingofclocks.uicomponents.colorpicker.ColorPicker
 import com.micahsoftdotexe.dreamingofclocks.utils.rememberImagePickerLaunchers
-
-// --- New: Settings UI and persistence ---
-private const val PREFS_NAME = "clock_prefs"
-private const val KEY_24_HOUR = "pref_24_hour"
-private const val KEY_SHOW_DATE = "pref_show_date"
-private const val KEY_SHOW_SECONDS = "pref_show_seconds"
-private const val KEY_BG_MODE = "pref_bg_mode" // "color" or "image"
-private const val KEY_BG_COLOR = "pref_bg_color" // hex string like #000000
-private const val KEY_BG_IMAGE_URI = "pref_bg_image_uri" // uri string
-private const val KEY_TEXT_COLOR = "pref_text_color" // hex string
-private const val KEY_SHOW_ALARM = "pref_show_alarm" // boolean
-private const val KEY_SHOW_MEDIA = "pref_show_media" // boolean
 
 // helper composables for grouping
 @Composable
@@ -148,8 +146,8 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Use 24-hour clock")
-                    Switch(checked = showSeconds, onCheckedChange = {
-                        showSeconds = it; saveBoolean(KEY_24_HOUR, it)
+                    Switch(checked = is24Hour, onCheckedChange = {
+                        is24Hour = it; saveBoolean(KEY_24_HOUR, it)
                     })
                 }
 
@@ -159,8 +157,8 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Show Seconds")
-                    Switch(checked = is24Hour, onCheckedChange = {
-                        is24Hour = it; saveBoolean(KEY_SHOW_SECONDS, it)
+                    Switch(checked = showSeconds, onCheckedChange = {
+                        showSeconds = it; saveBoolean(KEY_SHOW_SECONDS, it)
                     })
                 }
 
