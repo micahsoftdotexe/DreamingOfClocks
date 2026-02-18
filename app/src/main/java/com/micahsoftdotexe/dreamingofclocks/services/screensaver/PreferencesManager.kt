@@ -13,6 +13,10 @@ object PreferencesManager {
     const val KEY_BG_COLOR = "pref_bg_color"
     const val KEY_BG_IMAGE_URI = "pref_bg_image_uri"
     const val KEY_TEXT_COLOR = "pref_text_color"
+    const val KEY_CLOCK_MODE = "pref_clock_mode"
+    const val KEY_ANALOG_TEMPLATE = "pref_analog_template"
+    const val KEY_ANALOG_HAND_COLOR = "pref_analog_hand_color"
+    const val KEY_CUSTOM_TEMPLATE_URI = "pref_custom_template_uri"
 
     data class ScreensaverConfig(
         val is24Hour: Boolean,
@@ -23,7 +27,11 @@ object PreferencesManager {
         val bgMode: String,
         val bgColor: String,
         val bgImageUri: String?,
-        val textColor: String
+        val textColor: String,
+        val clockMode: String,          // "digital" or "analog"
+        val analogTemplate: String,     // built-in template name
+        val analogHandColor: String,    // hex color
+        val customTemplateUri: String?  // nullable URI string
     )
 
     fun loadConfig(context: Context): ScreensaverConfig {
@@ -37,7 +45,11 @@ object PreferencesManager {
             bgMode = prefs.getString(KEY_BG_MODE, "color") ?: "color",
             bgColor = prefs.getString(KEY_BG_COLOR, "#000000") ?: "#000000",
             bgImageUri = prefs.getString(KEY_BG_IMAGE_URI, null),
-            textColor = prefs.getString(KEY_TEXT_COLOR, "#FFFFFF") ?: "#FFFFFF"
+            textColor = prefs.getString(KEY_TEXT_COLOR, "#FFFFFF") ?: "#FFFFFF",
+            clockMode = prefs.getString(KEY_CLOCK_MODE, "digital") ?: "digital",
+            analogTemplate = prefs.getString(KEY_ANALOG_TEMPLATE, "Classic") ?: "Classic",
+            analogHandColor = prefs.getString(KEY_ANALOG_HAND_COLOR, "#FFFFFF") ?: "#FFFFFF",
+            customTemplateUri = prefs.getString(KEY_CUSTOM_TEMPLATE_URI, null)
         )
     }
 }
