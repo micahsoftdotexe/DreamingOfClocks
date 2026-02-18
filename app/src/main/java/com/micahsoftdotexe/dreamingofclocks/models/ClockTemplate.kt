@@ -130,7 +130,7 @@ data class ClockTemplate(
                 second = SecondHandConfig(show = true, lengthFraction = 0.7f, widthDp = 1f, tailFraction = 0.2f, color = "#FFD700", cap = "round")
             ),
             widgets = WidgetsConfig(
-                date = WidgetPosition(position = "on_face", offsetXFraction = 0.15f, offsetYFraction = 0f, fontSizeSp = 14),
+                date = WidgetPosition(position = "on_face", offsetXFraction = 0f, offsetYFraction = 0.2f, fontSizeSp = 14),
                 alarm = WidgetPosition(position = "below", offsetXFraction = 0f, offsetYFraction = 0.1f, fontSizeSp = 16),
                 media = WidgetPosition(position = "above", offsetXFraction = 0f, offsetYFraction = -0.1f, fontSizeSp = 14)
             )
