@@ -98,9 +98,9 @@ data class ClockTemplate(
                 second = SecondHandConfig(show = true, lengthFraction = 0.75f, widthDp = 2f, tailFraction = 0.15f, color = "#FF5722", cap = "butt")
             ),
             widgets = WidgetsConfig(
-                date = WidgetPosition(position = "right", offsetXFraction = 0.15f, offsetYFraction = -0.04f, fontSizeSp = 20),
-                alarm = WidgetPosition(position = "right", offsetXFraction = 0.15f, offsetYFraction = 0.04f, fontSizeSp = 16),
-                media = WidgetPosition(position = "right", offsetXFraction = 0.15f, offsetYFraction = -0.12f, fontSizeSp = 14)
+                date = WidgetPosition(position = "below", offsetXFraction = 0f, offsetYFraction = 0.08f, fontSizeSp = 20),
+                alarm = WidgetPosition(position = "below", offsetXFraction = 0f, offsetYFraction = 0.15f, fontSizeSp = 16),
+                media = WidgetPosition(position = "above", offsetXFraction = 0f, offsetYFraction = -0.08f, fontSizeSp = 14)
             )
         )
 
