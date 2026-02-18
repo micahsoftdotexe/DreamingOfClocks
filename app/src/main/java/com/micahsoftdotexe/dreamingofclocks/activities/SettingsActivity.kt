@@ -1,6 +1,9 @@
 package com.micahsoftdotexe.dreamingofclocks.activities
 
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.provider.Settings
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -53,6 +56,7 @@ import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesMana
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_TEXT_COLOR
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.PREFS_NAME
 import com.micahsoftdotexe.dreamingofclocks.uicomponents.colorpicker.ColorPicker
+import com.micahsoftdotexe.dreamingofclocks.utils.MediaNotificationListener
 import com.micahsoftdotexe.dreamingofclocks.utils.rememberImagePickerLaunchers
 
 // helper composables for grouping
@@ -297,12 +301,32 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Show media info")
-                    Switch(checked = showMedia, onCheckedChange = {
-                        showMedia = it
-                        saveBoolean(KEY_SHOW_MEDIA, it)
+                    Switch(checked = showMedia, onCheckedChange = { enabled ->
+                        if (enabled && !isNotificationListenerEnabled(context)) {
+                            context.startActivity(
+                                Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                            )
+                        } else {
+                            showMedia = enabled
+                            saveBoolean(KEY_SHOW_MEDIA, enabled)
+                        }
                     })
+                }
+                if (showMedia && !isNotificationListenerEnabled(context)) {
+                    Text(
+                        "Notification access is required for media info. Tap the toggle to open settings.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(start = 4.dp, top = 4.dp)
+                    )
                 }
             }
         }
     }
+}
+
+private fun isNotificationListenerEnabled(context: Context): Boolean {
+    val componentName = ComponentName(context, MediaNotificationListener::class.java)
+    val flat = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
+    return flat?.contains(componentName.flattenToString()) == true
 }
