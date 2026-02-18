@@ -4,6 +4,9 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -46,15 +49,20 @@ import androidx.core.content.edit
 import androidx.core.net.toUri
 import coil3.compose.rememberAsyncImagePainter
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_24_HOUR
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_ANALOG_HAND_COLOR
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_ANALOG_TEMPLATE
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_BG_COLOR
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_BG_IMAGE_URI
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_BG_MODE
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_CLOCK_MODE
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_CUSTOM_TEMPLATE_URI
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_SHOW_ALARM
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_SHOW_DATE
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_SHOW_MEDIA
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_SHOW_SECONDS
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_TEXT_COLOR
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.PREFS_NAME
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.TemplateManager
 import com.micahsoftdotexe.dreamingofclocks.uicomponents.colorpicker.ColorPicker
 import com.micahsoftdotexe.dreamingofclocks.utils.MediaNotificationListener
 import com.micahsoftdotexe.dreamingofclocks.utils.rememberImagePickerLaunchers
@@ -88,11 +96,10 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
     var bgColor by remember { mutableStateOf(prefs.getString(KEY_BG_COLOR, "#000000") ?: "#000000") }
     var bgImageUri by remember { mutableStateOf(prefs.getString(KEY_BG_IMAGE_URI, null)) }
     var textColor by remember { mutableStateOf(prefs.getString(KEY_TEXT_COLOR, "#FFFFFF") ?: "#FFFFFF") }
-
-//    if (bgMode == "image" && bgImageUri.isNullOrEmpty()) {
-//        // Fallback to color mode if image URI is missing
-//        bgMode = "color"
-//    }
+    var clockMode by remember { mutableStateOf(prefs.getString(KEY_CLOCK_MODE, "digital") ?: "digital") }
+    var analogTemplate by remember { mutableStateOf(prefs.getString(KEY_ANALOG_TEMPLATE, "Classic") ?: "Classic") }
+    var analogHandColor by remember { mutableStateOf(prefs.getString(KEY_ANALOG_HAND_COLOR, "#FFFFFF") ?: "#FFFFFF") }
+    var customTemplateUri by remember { mutableStateOf(prefs.getString(KEY_CUSTOM_TEMPLATE_URI, null)) }
 
     // Set up image picker with proper permissions
     val imagePickerLaunchers = rememberImagePickerLaunchers(
@@ -108,11 +115,35 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
             }
         },
         onPermissionDenied = {
-            // Optionally revert to color mode if user denies permission
             bgMode = "color"
             prefs.edit { putString(KEY_BG_MODE, "color") }
         }
     )
+
+    // JSON template file picker
+    val jsonPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (_: SecurityException) { }
+
+            val result = TemplateManager.loadTemplateFromUri(context, uri)
+            if (result.isSuccess) {
+                val uriString = uri.toString()
+                prefs.edit { putString(KEY_CUSTOM_TEMPLATE_URI, uriString) }
+                customTemplateUri = uriString
+                analogTemplate = "Custom"
+                Toast.makeText(context, "Template loaded: ${result.getOrNull()?.name}", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "Invalid template: ${result.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     fun setColorBgModeAndReset() {
         bgMode = "color"
@@ -133,6 +164,8 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
         prefs.edit { putString(key, value) }
     }
 
+    val builtInTemplates = remember { TemplateManager.getBuiltInTemplates() }
+
     Surface(modifier = modifier.fillMaxSize()) {
         // make the settings content vertically scrollable
         Column(
@@ -141,29 +174,107 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Formatting section
-            Section("Formatting") {
-                SubHeading("Time format")
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Use 24-hour clock")
-                    Switch(checked = is24Hour, onCheckedChange = {
-                        is24Hour = it; saveBoolean(KEY_24_HOUR, it)
+            // Clock Type section
+            Section("Clock Type") {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    RadioButton(selected = (clockMode == "digital"), onClick = {
+                        clockMode = "digital"; saveString(KEY_CLOCK_MODE, "digital")
+                    })
+                    Text("Digital", modifier = Modifier.clickable {
+                        clockMode = "digital"; saveString(KEY_CLOCK_MODE, "digital")
+                    })
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    RadioButton(selected = (clockMode == "analog"), onClick = {
+                        clockMode = "analog"; saveString(KEY_CLOCK_MODE, "analog")
+                    })
+                    Text("Analog", modifier = Modifier.clickable {
+                        clockMode = "analog"; saveString(KEY_CLOCK_MODE, "analog")
                     })
                 }
 
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Show Seconds")
-                    Switch(checked = showSeconds, onCheckedChange = {
-                        showSeconds = it; saveBoolean(KEY_SHOW_SECONDS, it)
-                    })
+                if (clockMode == "analog") {
+                    SubHeading("Template")
+                    builtInTemplates.forEach { template ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    analogTemplate = template.name
+                                    saveString(KEY_ANALOG_TEMPLATE, template.name)
+                                    customTemplateUri = null
+                                    prefs.edit { putString(KEY_CUSTOM_TEMPLATE_URI, null) }
+                                }
+                        ) {
+                            RadioButton(
+                                selected = (analogTemplate == template.name && customTemplateUri == null),
+                                onClick = {
+                                    analogTemplate = template.name
+                                    saveString(KEY_ANALOG_TEMPLATE, template.name)
+                                    customTemplateUri = null
+                                    prefs.edit { putString(KEY_CUSTOM_TEMPLATE_URI, null) }
+                                }
+                            )
+                            Text(template.name)
+                        }
+                    }
+                    // Custom template option
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                jsonPickerLauncher.launch(arrayOf("application/json"))
+                            }
+                    ) {
+                        RadioButton(
+                            selected = (customTemplateUri != null),
+                            onClick = {
+                                jsonPickerLauncher.launch(arrayOf("application/json"))
+                            }
+                        )
+                        Text(if (customTemplateUri != null) "Custom (loaded)" else "Custom (import JSON)")
+                    }
+
+                    SubHeading("Hand color")
+                    ColorPicker(
+                        colors = colorPresets,
+                        selected = analogHandColor,
+                        onSelect = { hex ->
+                            analogHandColor = hex
+                            saveString(KEY_ANALOG_HAND_COLOR, hex)
+                        }
+                    )
+                }
+            }
+
+            // Formatting section (digital-specific settings + shared date toggle)
+            Section("Formatting") {
+                if (clockMode == "digital") {
+                    SubHeading("Time format")
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Use 24-hour clock")
+                        Switch(checked = is24Hour, onCheckedChange = {
+                            is24Hour = it; saveBoolean(KEY_24_HOUR, it)
+                        })
+                    }
+
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Show Seconds")
+                        Switch(checked = showSeconds, onCheckedChange = {
+                            showSeconds = it; saveBoolean(KEY_SHOW_SECONDS, it)
+                        })
+                    }
                 }
 
                 SubHeading("Date")
