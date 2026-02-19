@@ -38,10 +38,16 @@ object ClockConfigurator {
     }
 
     private fun resolveTypeface(context: Context, fontFamily: String): Typeface =
-        if (fontFamily == "dseg7") {
-            Typeface.createFromAsset(context.assets, "fonts/DSEG7Classic-Regular.ttf")
-        } else {
-            Typeface.create(fontFamily, Typeface.NORMAL)
+        when (fontFamily) {
+            "dseg7" -> {
+                Typeface.createFromAsset(context.assets, "fonts/DSEG7Classic-Regular.ttf")
+            }
+            "dseg14" -> {
+                Typeface.createFromAsset(context.assets, "fonts/DSEG14Classic-Regular.ttf")
+            }
+            else -> {
+                Typeface.create(fontFamily, Typeface.NORMAL)
+            }
         }
 
     fun applyVisibility(
