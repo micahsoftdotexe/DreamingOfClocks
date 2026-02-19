@@ -1,11 +1,11 @@
 package com.micahsoftdotexe.dreamingofclocks.services.screensaver
 
 import android.content.Context
-import android.graphics.Typeface
 import android.view.View
 import android.widget.TextClock
 import android.widget.TextView
 import androidx.core.graphics.toColorInt
+import com.micahsoftdotexe.dreamingofclocks.utils.resolveTypeface
 
 object ClockConfigurator {
     fun applyClockFormat(textClock: TextClock, config: PreferencesManager.ScreensaverConfig) {
@@ -36,19 +36,6 @@ object ClockConfigurator {
         val featureTypeface = resolveTypeface(context, config.featureFont)
         featureViews.forEach { it.typeface = featureTypeface }
     }
-
-    private fun resolveTypeface(context: Context, fontFamily: String): Typeface =
-        when (fontFamily) {
-            "dseg7" -> {
-                Typeface.createFromAsset(context.assets, "fonts/DSEG7Classic-Regular.ttf")
-            }
-            "dseg14" -> {
-                Typeface.createFromAsset(context.assets, "fonts/DSEG14Classic-Regular.ttf")
-            }
-            else -> {
-                Typeface.create(fontFamily, Typeface.NORMAL)
-            }
-        }
 
     fun applyVisibility(
         dateText: TextView,
