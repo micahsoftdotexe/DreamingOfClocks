@@ -65,7 +65,7 @@ import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesMana
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_SHOW_SECONDS
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_TEXT_COLOR
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.PREFS_NAME
-import com.micahsoftdotexe.dreamingofclocks.services.screensaver.TemplateManager
+import com.micahsoftdotexe.dreamingofclocks.services.template.TemplateManager
 import com.micahsoftdotexe.dreamingofclocks.uicomponents.colorpicker.ColorPicker
 import com.micahsoftdotexe.dreamingofclocks.utils.MediaNotificationListener
 import com.micahsoftdotexe.dreamingofclocks.utils.rememberImagePickerLaunchers

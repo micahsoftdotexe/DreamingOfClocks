@@ -1,4 +1,6 @@
-package com.micahsoftdotexe.dreamingofclocks.services.screensaver
+package com.micahsoftdotexe.dreamingofclocks.services.template
+
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager
 
 import android.content.Context
 import android.net.Uri

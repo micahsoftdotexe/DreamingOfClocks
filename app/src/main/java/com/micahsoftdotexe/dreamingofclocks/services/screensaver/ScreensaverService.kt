@@ -12,6 +12,9 @@ import android.widget.FrameLayout
 import android.widget.TextClock
 import android.widget.TextView
 import com.micahsoftdotexe.dreamingofclocks.R
+import com.micahsoftdotexe.dreamingofclocks.services.media.MediaDisplayManager
+import com.micahsoftdotexe.dreamingofclocks.services.template.TemplateManager
+import com.micahsoftdotexe.dreamingofclocks.utils.BackgroundRenderer
 import com.micahsoftdotexe.dreamingofclocks.uicomponents.analogclock.AnalogClockView
 import com.micahsoftdotexe.dreamingofclocks.utils.AlarmHelper
 import java.text.SimpleDateFormat

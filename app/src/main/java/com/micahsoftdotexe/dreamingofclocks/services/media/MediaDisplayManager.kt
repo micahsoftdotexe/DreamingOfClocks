@@ -1,5 +1,6 @@
-package com.micahsoftdotexe.dreamingofclocks.services.screensaver
+package com.micahsoftdotexe.dreamingofclocks.services.media
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
@@ -48,6 +49,7 @@ class MediaDisplayManager {
         mediaTextView = null
     }
 
+    @SuppressLint("SetTextI18n")
     private fun updateMediaDisplay(info: MediaMetadataHelper.MediaInfo? = null) {
         val tv = mediaTextView ?: return
         val mediaInfo = info ?: mediaHelper?.getCurrentMediaInfo()
