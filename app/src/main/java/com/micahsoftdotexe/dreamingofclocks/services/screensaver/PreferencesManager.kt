@@ -17,6 +17,8 @@ object PreferencesManager {
     const val KEY_ANALOG_TEMPLATE = "pref_analog_template"
     const val KEY_ANALOG_HAND_COLOR = "pref_analog_hand_color"
     const val KEY_CUSTOM_TEMPLATE_URI = "pref_custom_template_uri"
+    const val KEY_CLOCK_FONT = "pref_clock_font"
+    const val KEY_FEATURE_FONT = "pref_feature_font"
 
     data class ScreensaverConfig(
         val is24Hour: Boolean,
@@ -31,7 +33,9 @@ object PreferencesManager {
         val clockMode: String,          // "digital" or "analog"
         val analogTemplate: String,     // built-in template name
         val analogHandColor: String,    // hex color
-        val customTemplateUri: String?  // nullable URI string
+        val customTemplateUri: String?, // nullable URI string
+        val clockFont: String,          // font family for the digital clock
+        val featureFont: String         // font family for date/alarm/media text
     )
 
     fun loadConfig(context: Context): ScreensaverConfig {
@@ -49,7 +53,9 @@ object PreferencesManager {
             clockMode = prefs.getString(KEY_CLOCK_MODE, "digital") ?: "digital",
             analogTemplate = prefs.getString(KEY_ANALOG_TEMPLATE, "Classic") ?: "Classic",
             analogHandColor = prefs.getString(KEY_ANALOG_HAND_COLOR, "#FFFFFF") ?: "#FFFFFF",
-            customTemplateUri = prefs.getString(KEY_CUSTOM_TEMPLATE_URI, null)
+            customTemplateUri = prefs.getString(KEY_CUSTOM_TEMPLATE_URI, null),
+            clockFont = prefs.getString(KEY_CLOCK_FONT, "sans-serif") ?: "sans-serif",
+            featureFont = prefs.getString(KEY_FEATURE_FONT, "sans-serif") ?: "sans-serif"
         )
     }
 }

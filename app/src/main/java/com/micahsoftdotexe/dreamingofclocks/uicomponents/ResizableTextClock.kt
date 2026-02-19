@@ -1,6 +1,8 @@
 package com.micahsoftdotexe.dreamingofclocks.uicomponents
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Typeface
 import android.text.Layout.Alignment
 import android.text.StaticLayout
 import android.text.TextPaint
@@ -26,6 +28,7 @@ class ResizeableTextClock @JvmOverloads constructor(
     var onTextResizeListener: OnTextResizeListener? = null
     private var mNeedsResize = false
     private var mTextSize: Float = textSize
+    private var mSavedTypeface: Typeface? = null
 
     var maxTextSize: Float = 0f
         set(value) {
@@ -74,12 +77,17 @@ class ResizeableTextClock @JvmOverloads constructor(
         mSpacingMult = mult
     }
 
-    fun resetTextSize() {
-        if (mTextSize > 0f) {
-            super.setTextSize(TypedValue.COMPLEX_UNIT_PX, mTextSize)
-            maxTextSize = mTextSize
-        }
+    override fun setTypeface(tf: Typeface?) {
+        mSavedTypeface = tf
+        super.setTypeface(tf)
     }
+
+//    fun resetTextSize() {
+//        if (mTextSize > 0f) {
+//            super.setTextSize(TypedValue.COMPLEX_UNIT_PX, mTextSize)
+//            maxTextSize = mTextSize
+//        }
+//    }
 
     override fun onLayout(
         changed: Boolean,
@@ -98,6 +106,7 @@ class ResizeableTextClock @JvmOverloads constructor(
         super.onLayout(changed, left, top, right, bottom)
     }
 
+    @SuppressLint("SetTextI18n")
     fun resizeText(width: Int, height: Int) {
         val text = text
 
@@ -155,9 +164,11 @@ class ResizeableTextClock @JvmOverloads constructor(
             }
         }
 
-        // Apply final size to the view paint (keeps the same typeface and flags)
+        // Apply final size to the view paint
         setTextSize(TypedValue.COMPLEX_UNIT_PX, targetTextSize)
         setLineSpacing(mSpacingAdd, mSpacingMult)
+        // Re-apply custom typeface — setTextSize can drop it on some Android versions
+        mSavedTypeface?.let { paint.typeface = it }
 
         onTextResizeListener?.onTextResize(this, oldTextSize, targetTextSize)
         mNeedsResize = false

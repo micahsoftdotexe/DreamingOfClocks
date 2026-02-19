@@ -44,6 +44,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import com.micahsoftdotexe.dreamingofclocks.uicomponents.fontpicker.FontPicker
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import androidx.core.net.toUri
@@ -54,8 +55,10 @@ import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesMana
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_BG_COLOR
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_BG_IMAGE_URI
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_BG_MODE
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_CLOCK_FONT
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_CLOCK_MODE
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_CUSTOM_TEMPLATE_URI
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_FEATURE_FONT
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_SHOW_ALARM
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_SHOW_DATE
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_SHOW_MEDIA
@@ -81,6 +84,7 @@ private fun SubHeading(title: String) {
     Text(title, style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(vertical = 6.dp))
 }
 
+
 @Composable
 @Preview
 fun SettingsActivity(modifier: Modifier = Modifier) {
@@ -100,6 +104,8 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
     var analogTemplate by remember { mutableStateOf(prefs.getString(KEY_ANALOG_TEMPLATE, "Classic") ?: "Classic") }
     var analogHandColor by remember { mutableStateOf(prefs.getString(KEY_ANALOG_HAND_COLOR, "#FFFFFF") ?: "#FFFFFF") }
     var customTemplateUri by remember { mutableStateOf(prefs.getString(KEY_CUSTOM_TEMPLATE_URI, null)) }
+    var clockFont by remember { mutableStateOf(prefs.getString(KEY_CLOCK_FONT, "sans-serif") ?: "sans-serif") }
+    var featureFont by remember { mutableStateOf(prefs.getString(KEY_FEATURE_FONT, "sans-serif") ?: "sans-serif") }
 
     // Set up image picker with proper permissions
     val imagePickerLaunchers = rememberImagePickerLaunchers(
@@ -275,6 +281,16 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
                             showSeconds = it; saveBoolean(KEY_SHOW_SECONDS, it)
                         })
                     }
+
+                    SubHeading("Clock font")
+                    FontPicker(selected = clockFont, onSelect = {
+                        clockFont = it; saveString(KEY_CLOCK_FONT, it)
+                    })
+
+                    SubHeading("Feature text font")
+                    FontPicker(selected = featureFont, onSelect = {
+                        featureFont = it; saveString(KEY_FEATURE_FONT, it)
+                    })
                 }
 
                 SubHeading("Date")

@@ -80,6 +80,7 @@ class ScreensaverService : DreamService() {
 
             ClockConfigurator.applyClockFormat(textClock!!, config)
             ClockConfigurator.applyTextColors(listOf(textClock!!, dateText, alarmText), config)
+            ClockConfigurator.applyFonts(this, textClock!!, listOf(dateText, alarmText, mediaText), config)
             ClockConfigurator.applyVisibility(dateText, alarmText, mediaText, config)
         }
 
