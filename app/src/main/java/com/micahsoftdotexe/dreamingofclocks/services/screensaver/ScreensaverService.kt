@@ -61,7 +61,7 @@ class ScreensaverService : DreamService() {
         isScreenBright = true
     }
 
-    @SuppressLint("CutPasteId")
+//    @SuppressLint("CutPasteId")
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
 

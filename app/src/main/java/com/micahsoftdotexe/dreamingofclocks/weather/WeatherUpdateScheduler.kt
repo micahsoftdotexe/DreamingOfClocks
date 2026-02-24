@@ -3,9 +3,11 @@ package com.micahsoftdotexe.dreamingofclocks.weather
 import android.content.Context
 import android.util.Log
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager
+import kotlin.coroutines.resume
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 object WeatherUpdateScheduler {
     private const val TAG = "WeatherAPI"
@@ -71,6 +73,13 @@ object WeatherUpdateScheduler {
         if (config.weatherUseGps) {
             val gps = LocationHelper.getLastKnownLocation(context)
             if (gps != null) return gps
+            Log.d(TAG, "No cached GPS location, requesting active location fix")
+            val active = suspendCancellableCoroutine { cont ->
+                LocationHelper.requestLocationUpdate(context) { result ->
+                    cont.resume(result)
+                }
+            }
+            if (active != null) return active
             Log.d(TAG, "GPS location unavailable, falling back to text location")
         }
 
