@@ -18,6 +18,10 @@ object BackgroundRenderer {
         resources: Resources,
         contentResolver: ContentResolver
     ) {
+        if (config.bgMode == "weather") {
+            // WeatherBackgroundView handles its own rendering
+            return
+        }
         if (config.bgMode == "image" && !config.bgImageUri.isNullOrEmpty()) {
             try {
                 val uri = config.bgImageUri.toUri()

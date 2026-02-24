@@ -8,15 +8,24 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.service.dreams.DreamService
 import android.view.View
+import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.LinearLayout
 import android.widget.TextClock
 import android.widget.TextView
 import com.micahsoftdotexe.dreamingofclocks.R
 import com.micahsoftdotexe.dreamingofclocks.services.media.MediaDisplayManager
 import com.micahsoftdotexe.dreamingofclocks.services.template.TemplateManager
-import com.micahsoftdotexe.dreamingofclocks.utils.BackgroundRenderer
 import com.micahsoftdotexe.dreamingofclocks.uicomponents.analogclock.AnalogClockView
+import com.micahsoftdotexe.dreamingofclocks.uicomponents.weatherbackground.WeatherBackgroundView
 import com.micahsoftdotexe.dreamingofclocks.utils.AlarmHelper
+import com.micahsoftdotexe.dreamingofclocks.utils.BackgroundRenderer
+import com.micahsoftdotexe.dreamingofclocks.weather.WeatherCache
+import com.micahsoftdotexe.dreamingofclocks.weather.WeatherUpdateScheduler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -30,6 +39,8 @@ class ScreensaverService : DreamService() {
     private var textClock: TextClock? = null
 
     private val mediaDisplayManager = MediaDisplayManager()
+    private var weatherScope: CoroutineScope? = null
+    private var weatherView: WeatherBackgroundView? = null
 
     private val timeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -93,6 +104,10 @@ class ScreensaverService : DreamService() {
         val rootLayout = findViewById<View>(R.id.screensaver_root)
         BackgroundRenderer.applyBackground(rootLayout, config, resources, contentResolver)
 
+        if (config.bgMode == "weather") {
+            setupWeatherBackground(rootLayout, config)
+        }
+
         if (config.showMedia) {
             mediaDisplayManager.setup(this, mediaText)
         }
@@ -133,5 +148,56 @@ class ScreensaverService : DreamService() {
         unregisterReceiver(timeReceiver)
         unregisterReceiver(alarmUpdateReceiver)
         mediaDisplayManager.teardown()
+        weatherScope?.cancel()
+        weatherScope = null
+        weatherView = null
+    }
+
+    private fun setupWeatherBackground(rootView: View, config: PreferencesManager.ScreensaverConfig) {
+        val bgView = WeatherBackgroundView(this)
+        weatherView = bgView
+
+        // Show cached weather immediately
+        val cached = WeatherCache.load(this)
+        if (cached != null) {
+            bgView.setWeather(cached.condition, cached.isDay)
+        }
+
+        // Insert the weather view behind all other content
+        when (rootView) {
+            is FrameLayout -> {
+                rootView.addView(bgView, 0, FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                ))
+            }
+            is LinearLayout -> {
+                // Wrap the LinearLayout content in a FrameLayout overlay
+                val parent = rootView.parent as? ViewGroup
+                if (parent != null) {
+                    val index = parent.indexOfChild(rootView)
+                    parent.removeView(rootView)
+                    val wrapper = FrameLayout(this).apply {
+                        id = R.id.screensaver_root
+                    }
+                    wrapper.addView(bgView, FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    ))
+                    wrapper.addView(rootView, FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    ))
+                    parent.addView(wrapper, index)
+                }
+            }
+        }
+
+        // Start periodic weather updates
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+        weatherScope = scope
+        WeatherUpdateScheduler.startPeriodicUpdates(this, scope) { data ->
+            bgView.setWeather(data.condition, data.isDay)
+        }
     }
 }

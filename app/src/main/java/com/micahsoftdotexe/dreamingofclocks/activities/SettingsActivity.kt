@@ -1,5 +1,6 @@
 package com.micahsoftdotexe.dreamingofclocks.activities
 
+import android.Manifest
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,10 +27,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -37,6 +45,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import coil3.compose.rememberAsyncImagePainter
+import com.micahsoftdotexe.dreamingofclocks.weather.WeatherUpdateScheduler
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_24_HOUR
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_ANALOG_HAND_COLOR
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_ANALOG_TEMPLATE
@@ -64,6 +74,9 @@ import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesMana
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_SHOW_MEDIA
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_SHOW_SECONDS
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_TEXT_COLOR
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_WEATHER_LOCATION
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_WEATHER_UPDATE_FREQ
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_WEATHER_USE_GPS
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.PREFS_NAME
 import com.micahsoftdotexe.dreamingofclocks.services.template.TemplateManager
 import com.micahsoftdotexe.dreamingofclocks.uicomponents.colorpicker.ColorPicker
@@ -85,11 +98,13 @@ private fun SubHeading(title: String) {
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview
 fun SettingsActivity(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    val coroutineScope = rememberCoroutineScope()
 
     var is24Hour by remember { mutableStateOf(prefs.getBoolean(KEY_24_HOUR, false)) }
     var showSeconds by remember { mutableStateOf(prefs.getBoolean(KEY_SHOW_SECONDS, false)) }
@@ -106,6 +121,23 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
     var customTemplateUri by remember { mutableStateOf(prefs.getString(KEY_CUSTOM_TEMPLATE_URI, null)) }
     var clockFont by remember { mutableStateOf(prefs.getString(KEY_CLOCK_FONT, "sans-serif") ?: "sans-serif") }
     var featureFont by remember { mutableStateOf(prefs.getString(KEY_FEATURE_FONT, "sans-serif") ?: "sans-serif") }
+    var weatherLocation by remember { mutableStateOf(prefs.getString(KEY_WEATHER_LOCATION, "") ?: "") }
+    var weatherUpdateFreq by remember { mutableStateOf(prefs.getLong(KEY_WEATHER_UPDATE_FREQ, 1_800_000L)) }
+    var weatherUseGps by remember { mutableStateOf(prefs.getBoolean(KEY_WEATHER_USE_GPS, false)) }
+
+    // Location permission launcher
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            weatherUseGps = true
+            prefs.edit { putBoolean(KEY_WEATHER_USE_GPS, true) }
+        } else {
+            weatherUseGps = false
+            prefs.edit { putBoolean(KEY_WEATHER_USE_GPS, false) }
+            Toast.makeText(context, "Location permission denied", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     // Set up image picker with proper permissions
     val imagePickerLaunchers = rememberImagePickerLaunchers(
@@ -325,6 +357,15 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
                         bgMode = "image"
                         saveString(KEY_BG_MODE, "image")
                     })
+
+                    RadioButton(selected = (bgMode == "weather"), onClick = {
+                        bgMode = "weather"
+                        saveString(KEY_BG_MODE, "weather")
+                    })
+                    Text("Weather", modifier = Modifier.padding(top = 12.dp).clickable {
+                        bgMode = "weather"
+                        saveString(KEY_BG_MODE, "weather")
+                    })
                 }
 
                 if (bgMode == "color") {
@@ -336,6 +377,96 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
                             saveString(KEY_BG_COLOR, hex)
                         }
                     )
+                } else if (bgMode == "weather") {
+                    // GPS toggle
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Use device location")
+                        Switch(checked = weatherUseGps, onCheckedChange = { enabled ->
+                            if (enabled) {
+                                locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+                            } else {
+                                weatherUseGps = false
+                                prefs.edit { putBoolean(KEY_WEATHER_USE_GPS, false) }
+                            }
+                        })
+                    }
+
+                    // City/zip text field (disabled when GPS enabled)
+                    OutlinedTextField(
+                        value = weatherLocation,
+                        onValueChange = { value ->
+                            weatherLocation = value
+                            prefs.edit { putString(KEY_WEATHER_LOCATION, value) }
+                        },
+                        label = { Text("City name or zip code") },
+                        enabled = !weatherUseGps,
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                    )
+
+                    // Update frequency selector
+                    SubHeading("Update frequency")
+                    val freqOptions = listOf(
+                        "15 minutes" to 900_000L,
+                        "30 minutes" to 1_800_000L,
+                        "1 hour" to 3_600_000L,
+                        "3 hours" to 10_800_000L
+                    )
+                    var freqExpanded by remember { mutableStateOf(false) }
+                    val selectedFreqLabel = freqOptions.find { it.second == weatherUpdateFreq }?.first ?: "30 minutes"
+                    ExposedDropdownMenuBox(
+                        expanded = freqExpanded,
+                        onExpandedChange = { freqExpanded = it }
+                    ) {
+                        OutlinedTextField(
+                            value = selectedFreqLabel,
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = freqExpanded) },
+                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = freqExpanded,
+                            onDismissRequest = { freqExpanded = false }
+                        ) {
+                            freqOptions.forEach { (label, value) ->
+                                DropdownMenuItem(
+                                    text = { Text(label) },
+                                    onClick = {
+                                        weatherUpdateFreq = value
+                                        prefs.edit { putLong(KEY_WEATHER_UPDATE_FREQ, value) }
+                                        freqExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Fetch Now button
+                    OutlinedButton(
+                        onClick = {
+                            WeatherUpdateScheduler.fetchNow(context, coroutineScope) { data ->
+                                if (data != null) {
+                                    Toast.makeText(
+                                        context,
+                                        "Weather: ${data.condition.name}, ${data.temperature}°",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                } else {
+                                    Toast.makeText(context, "Weather fetch failed", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Fetch Now")
+                    }
                 } else {
                     // Show button to select image if none selected
                     if (bgImageUri.isNullOrEmpty()) {

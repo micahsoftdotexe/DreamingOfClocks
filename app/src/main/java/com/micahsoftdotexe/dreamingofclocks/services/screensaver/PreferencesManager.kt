@@ -19,6 +19,9 @@ object PreferencesManager {
     const val KEY_CUSTOM_TEMPLATE_URI = "pref_custom_template_uri"
     const val KEY_CLOCK_FONT = "pref_clock_font"
     const val KEY_FEATURE_FONT = "pref_feature_font"
+    const val KEY_WEATHER_LOCATION = "pref_weather_location"
+    const val KEY_WEATHER_UPDATE_FREQ = "pref_weather_update_freq"
+    const val KEY_WEATHER_USE_GPS = "pref_weather_use_gps"
 
     data class ScreensaverConfig(
         val is24Hour: Boolean,
@@ -35,7 +38,10 @@ object PreferencesManager {
         val analogHandColor: String,    // hex color
         val customTemplateUri: String?, // nullable URI string
         val clockFont: String,          // font family for the digital clock
-        val featureFont: String         // font family for date/alarm/media text
+        val featureFont: String,        // font family for date/alarm/media text
+        val weatherLocation: String,
+        val weatherUpdateFreq: Long,    // milliseconds
+        val weatherUseGps: Boolean
     )
 
     fun loadConfig(context: Context): ScreensaverConfig {
@@ -55,7 +61,10 @@ object PreferencesManager {
             analogHandColor = prefs.getString(KEY_ANALOG_HAND_COLOR, "#FFFFFF") ?: "#FFFFFF",
             customTemplateUri = prefs.getString(KEY_CUSTOM_TEMPLATE_URI, null),
             clockFont = prefs.getString(KEY_CLOCK_FONT, "sans-serif") ?: "sans-serif",
-            featureFont = prefs.getString(KEY_FEATURE_FONT, "sans-serif") ?: "sans-serif"
+            featureFont = prefs.getString(KEY_FEATURE_FONT, "sans-serif") ?: "sans-serif",
+            weatherLocation = prefs.getString(KEY_WEATHER_LOCATION, "") ?: "",
+            weatherUpdateFreq = prefs.getLong(KEY_WEATHER_UPDATE_FREQ, 1_800_000L), // 30 min default
+            weatherUseGps = prefs.getBoolean(KEY_WEATHER_USE_GPS, false)
         )
     }
 }
