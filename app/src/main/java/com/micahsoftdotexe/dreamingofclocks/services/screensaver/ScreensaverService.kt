@@ -1,6 +1,5 @@
 package com.micahsoftdotexe.dreamingofclocks.services.screensaver
 
-import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -79,11 +78,6 @@ class ScreensaverService : DreamService() {
             mediaText = findViewById(R.id.mediaTextScreensaver)
 
             ClockConfigurator.applyVisibility(dateText, alarmText, mediaText, config)
-
-            val container = findViewById<FrameLayout>(R.id.screensaver_root)
-            AnalogClockConfigurator.positionWidgets(
-                container, dateText, alarmText, mediaText, template, config
-            )
         } else {
             setContentView(R.layout.screensaver_layout)
 
@@ -98,10 +92,17 @@ class ScreensaverService : DreamService() {
             ClockConfigurator.applyVisibility(dateText, alarmText, mediaText, config)
         }
 
+        val rootLayout = findViewById<View>(R.id.screensaver_root)
+
+        if (config.clockMode == "analog") {
+            val template = TemplateManager.getActiveTemplate(this)
+            AnalogClockConfigurator.positionWidgets(
+                rootLayout as FrameLayout, dateText, alarmText, mediaText, template, config
+            )
+        }
+
         updateDate()
         if (config.showAlarm) updateAlarm()
-
-        val rootLayout = findViewById<View>(R.id.screensaver_root)
         BackgroundRenderer.applyBackground(rootLayout, config, resources, contentResolver)
 
         if (config.bgMode == "weather") {
