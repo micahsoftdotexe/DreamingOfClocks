@@ -20,7 +20,6 @@ class ScreensaverConfigTest {
         clockMode = "digital",
         analogTemplate = "Classic",
         analogHandColor = "#FFFFFF",
-        customTemplateUri = null,
         clockFont = "sans-serif",
         featureFont = "sans-serif",
         weatherLocation = "",
@@ -82,16 +81,6 @@ class ScreensaverConfigTest {
         )
         assertEquals("image", config.bgMode)
         assertEquals("content://media/external/images/123", config.bgImageUri)
-    }
-
-    @Test
-    fun `config with custom template URI`() {
-        val config = defaultConfig().copy(
-            clockMode = "analog",
-            customTemplateUri = "content://documents/template.json"
-        )
-        assertEquals("analog", config.clockMode)
-        assertEquals("content://documents/template.json", config.customTemplateUri)
     }
 
     @Test

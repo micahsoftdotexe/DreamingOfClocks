@@ -67,7 +67,6 @@ import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesMana
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_BG_MODE
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_CLOCK_FONT
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_CLOCK_MODE
-import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_CUSTOM_TEMPLATE_URI
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_FEATURE_FONT
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_SHOW_ALARM
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_SHOW_DATE
@@ -118,7 +117,6 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
     var clockMode by remember { mutableStateOf(prefs.getString(KEY_CLOCK_MODE, "digital") ?: "digital") }
     var analogTemplate by remember { mutableStateOf(prefs.getString(KEY_ANALOG_TEMPLATE, "Classic") ?: "Classic") }
     var analogHandColor by remember { mutableStateOf(prefs.getString(KEY_ANALOG_HAND_COLOR, "#FFFFFF") ?: "#FFFFFF") }
-    var customTemplateUri by remember { mutableStateOf(prefs.getString(KEY_CUSTOM_TEMPLATE_URI, null)) }
     var clockFont by remember { mutableStateOf(prefs.getString(KEY_CLOCK_FONT, "sans-serif") ?: "sans-serif") }
     var featureFont by remember { mutableStateOf(prefs.getString(KEY_FEATURE_FONT, "sans-serif") ?: "sans-serif") }
     var weatherLocation by remember { mutableStateOf(prefs.getString(KEY_WEATHER_LOCATION, "") ?: "") }
@@ -157,31 +155,6 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
             prefs.edit { putString(KEY_BG_MODE, "color") }
         }
     )
-
-    // JSON template file picker
-    val jsonPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        if (uri != null) {
-            try {
-                context.contentResolver.takePersistableUriPermission(
-                    uri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-            } catch (_: SecurityException) { }
-
-            val result = TemplateManager.loadTemplateFromUri(context, uri)
-            if (result.isSuccess) {
-                val uriString = uri.toString()
-                prefs.edit { putString(KEY_CUSTOM_TEMPLATE_URI, uriString) }
-                customTemplateUri = uriString
-                analogTemplate = "Custom"
-                Toast.makeText(context, "Template loaded: ${result.getOrNull()?.name}", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(context, "Invalid template: ${result.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
-            }
-        }
-    }
 
     fun setColorBgModeAndReset() {
         bgMode = "color"
@@ -242,40 +215,18 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
                                 .clickable {
                                     analogTemplate = template.name
                                     saveString(KEY_ANALOG_TEMPLATE, template.name)
-                                    customTemplateUri = null
-                                    prefs.edit { putString(KEY_CUSTOM_TEMPLATE_URI, null) }
                                 }
                         ) {
                             RadioButton(
-                                selected = (analogTemplate == template.name && customTemplateUri == null),
+                                selected = (analogTemplate == template.name),
                                 onClick = {
                                     analogTemplate = template.name
                                     saveString(KEY_ANALOG_TEMPLATE, template.name)
-                                    customTemplateUri = null
-                                    prefs.edit { putString(KEY_CUSTOM_TEMPLATE_URI, null) }
                                 }
                             )
                             Text(template.name)
                         }
                     }
-                    // Custom template option
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                jsonPickerLauncher.launch(arrayOf("application/json"))
-                            }
-                    ) {
-                        RadioButton(
-                            selected = (customTemplateUri != null),
-                            onClick = {
-                                jsonPickerLauncher.launch(arrayOf("application/json"))
-                            }
-                        )
-                        Text(if (customTemplateUri != null) "Custom (loaded)" else "Custom (import JSON)")
-                    }
-
                     SubHeading("Hand color")
                     ColorPicker(
                         colors = colorPresets,

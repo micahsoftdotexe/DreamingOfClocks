@@ -10,7 +10,7 @@ app/src/main/java/com/micahsoftdotexe/dreamingofclocks/
   services/
     screensaver/       - ScreensaverService, PreferencesManager, ClockConfigurator, AnalogClockConfigurator
     media/             - MediaDisplayManager (now-playing display)
-    template/          - TemplateManager (JSON clock template parsing)
+    template/          - TemplateManager (built-in analog clock template lookup)
   models/              - ClockTemplate (5 built-in templates + data classes)
   weather/             - WeatherApiClient, WeatherCache, WeatherUpdateScheduler, WeatherCondition, LocationHelper
   uicomponents/
@@ -54,7 +54,7 @@ tmp/                    - Generated files (analysis, reports). Not in source con
 
 - **DreamService:** Android screensaver API. ScreensaverService is the entry point, configured via `res/xml/dream.xml`.
 - **Clock modes:** Digital (ResizableTextClock) and analog (AnalogClockView with Canvas drawing).
-- **Analog templates:** 5 built-in (Classic, Minimal, Modern, Elegant, Compact) + custom JSON import via TemplateManager.
+- **Analog templates:** 5 built-in (Classic, Minimal, Modern, Elegant, Compact).
 - **Background modes:** Solid color, user-selected image, or animated weather (WeatherBackgroundView with particle effects).
 - **Weather pipeline:** LocationHelper (GPS/text) -> WeatherApiClient (Open-Meteo) -> WeatherCache -> WeatherUpdateScheduler -> WeatherBackgroundView.
 - **Media display:** MediaNotificationListener (NotificationListenerService) feeds metadata to MediaDisplayManager.
@@ -65,4 +65,3 @@ tmp/                    - Generated files (analysis, reports). Not in source con
 - Do NOT run git commands without explicit user consent
 - Singleton objects for service classes (PreferencesManager, TemplateManager, WeatherApiClient, etc.)
 - Custom views use Handler-based frame loops for animation
-- Remote: git@github.com:micahsoftdotexe/DreamingOfClocks.git

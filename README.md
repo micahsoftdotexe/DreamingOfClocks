@@ -9,7 +9,7 @@ An Android screensaver (DreamService) app featuring digital and analog clock mod
 ## Features
 
 - **Digital clock** — 12/24-hour format, optional seconds, auto-sizing text
-- **Analog clock** — 5 built-in templates (Classic, Minimal, Modern, Elegant, Compact) plus custom JSON templates
+- **Analog clock** — 5 built-in templates (Classic, Minimal, Modern, Elegant, Compact)
 - **Background modes:**
   - Solid color
   - Custom image from device storage
@@ -71,7 +71,7 @@ Access settings via the settings icon next to DreamingOfClocks in the screensave
 | Setting | Description |
 |---|---|
 | Clock type | Digital or Analog |
-| Analog template | Choose a built-in template or import a custom JSON template |
+| Analog template | Choose from 5 built-in styles |
 | Time format | 12/24-hour, show/hide seconds |
 | Font | System fonts or DSEG 7/14-segment display fonts |
 | Background | Solid color, device image, or animated weather |
@@ -81,117 +81,6 @@ Access settings via the settings icon next to DreamingOfClocks in the screensave
 | Hand color | Color override for analog clock hands |
 | Show alarm | Toggle next alarm countdown display |
 | Show media | Toggle now-playing media display |
-
----
-
-## Custom Analog Templates
-
-You can create your own analog clock template as a JSON file and import it via the settings screen.
-
-### Schema
-
-```json
-{
-  "name": "My Template",
-  "version": 1,
-  "face": {
-    "radiusFraction": 0.4,
-    "fillColor": null,
-    "borderColor": null,
-    "borderWidthDp": 3.0,
-    "showHourNumbers": true,
-    "numberStyle": "arabic",
-    "numberFontSizeFraction": 0.08,
-    "showMinuteTicks": true,
-    "minuteTickLengthFraction": 0.03,
-    "minuteTickWidthDp": 1.0,
-    "showHourTicks": true,
-    "hourTickLengthFraction": 0.06,
-    "hourTickWidthDp": 2.5,
-    "showCenterDot": true,
-    "centerDotRadiusFraction": 0.02
-  },
-  "hands": {
-    "hour": {
-      "lengthFraction": 0.5,
-      "widthDp": 6.0,
-      "tailFraction": 0.1,
-      "color": null,
-      "cap": "round"
-    },
-    "minute": {
-      "lengthFraction": 0.7,
-      "widthDp": 4.0,
-      "tailFraction": 0.1,
-      "color": null,
-      "cap": "round"
-    },
-    "second": {
-      "show": true,
-      "lengthFraction": 0.8,
-      "widthDp": 1.5,
-      "tailFraction": 0.15,
-      "color": "#FF0000",
-      "cap": "butt"
-    }
-  },
-  "widgets": {
-    "date": {
-      "position": "below",
-      "offsetXFraction": 0.0,
-      "offsetYFraction": 0.1,
-      "fontSizeSp": 20
-    },
-    "alarm": {
-      "position": "below",
-      "offsetXFraction": 0.0,
-      "offsetYFraction": 0.15,
-      "fontSizeSp": 16
-    },
-    "media": {
-      "position": "above",
-      "offsetXFraction": 0.0,
-      "offsetYFraction": -0.1,
-      "fontSizeSp": 14
-    }
-  }
-}
-```
-
-### Field Reference
-
-**`face`**
-- `radiusFraction` *(float 0–1)* — Clock face radius as a fraction of the view size
-- `fillColor` *(string or null)* — Face fill color as `#RRGGBB` / `#AARRGGBB`, or `null` for transparent
-- `borderColor` *(string or null)* — Border color, or `null` to use the text color
-- `borderWidthDp` *(float)* — Border stroke width in dp
-- `showHourNumbers` *(boolean)* — Show hour numbers on the face
-- `numberStyle` *(string)* — `"arabic"`, `"roman"`, or `"none"`
-- `numberFontSizeFraction` *(float 0–1)* — Number font size as a fraction of the view size
-- `showMinuteTicks` *(boolean)* — Show minute tick marks
-- `minuteTickLengthFraction` *(float 0–1)* — Minute tick length as a fraction of the view size
-- `minuteTickWidthDp` *(float)* — Minute tick stroke width in dp
-- `showHourTicks` *(boolean)* — Show hour tick marks
-- `hourTickLengthFraction` *(float 0–1)* — Hour tick length as a fraction of the view size
-- `hourTickWidthDp` *(float)* — Hour tick stroke width in dp
-- `showCenterDot` *(boolean)* — Show a dot at the center of the clock
-- `centerDotRadiusFraction` *(float 0–1)* — Center dot radius as a fraction of the view size
-
-**`hands.hour` and `hands.minute`**
-- `lengthFraction` *(float 0–1)* — Hand length as a fraction of the face radius
-- `widthDp` *(float)* — Hand stroke width in dp
-- `tailFraction` *(float 0–1)* — Tail length behind center as a fraction of the face radius
-- `color` *(string or null)* — Hand color as `#RRGGBB`, or `null` to use the configured hand color
-- `cap` *(string)* — Stroke cap: `"round"`, `"square"`, or `"butt"`
-
-**`hands.second`** — same fields as above, plus:
-- `show` *(boolean)* — Whether to show the second hand
-
-**`widgets.date`, `widgets.alarm`, `widgets.media`**
-- `position` *(string)* — `"above"`, `"below"`, `"left"`, `"right"`, or `"on_face"`
-- `offsetXFraction` *(float)* — Horizontal offset as a fraction of the view size
-- `offsetYFraction` *(float)* — Vertical offset as a fraction of the view size
-- `fontSizeSp` *(int)* — Font size in sp
 
 ---
 
