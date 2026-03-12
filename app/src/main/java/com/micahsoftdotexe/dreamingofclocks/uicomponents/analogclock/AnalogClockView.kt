@@ -129,6 +129,14 @@ class AnalogClockView @JvmOverloads constructor(
 
     private fun drawTicks(canvas: Canvas, cx: Float, cy: Float, radius: Float, base: Float) {
         val face = template.face
+        if (!face.showHourTicks && !face.showMinuteTicks) return
+
+        paint.reset()
+        paint.isAntiAlias = true
+        paint.style = Paint.Style.STROKE
+        paint.color = handColor
+        paint.strokeCap = Paint.Cap.ROUND
+
         for (i in 0 until 60) {
             val isHourMark = i % 5 == 0
             val show = if (isHourMark) face.showHourTicks else face.showMinuteTicks
@@ -144,12 +152,7 @@ class AnalogClockView @JvmOverloads constructor(
             val innerX = cx + (radius - tickLength) * cos(angle).toFloat()
             val innerY = cy + (radius - tickLength) * sin(angle).toFloat()
 
-            paint.reset()
-            paint.isAntiAlias = true
-            paint.style = Paint.Style.STROKE
             paint.strokeWidth = dpToPx(widthDp)
-            paint.color = handColor
-            paint.strokeCap = Paint.Cap.ROUND
             canvas.drawLine(innerX, innerY, outerX, outerY, paint)
         }
     }

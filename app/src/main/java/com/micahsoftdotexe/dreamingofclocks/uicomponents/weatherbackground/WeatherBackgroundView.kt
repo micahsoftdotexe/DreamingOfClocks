@@ -49,10 +49,17 @@ class WeatherBackgroundView @JvmOverloads constructor(
 
     private var particlesInitialized = false
 
+    // Cached sky gradient
+    private var cachedGradient: LinearGradient? = null
+    private var cachedGradientHeight = 0
+    private var cachedGradientCondition: WeatherCondition? = null
+    private var cachedGradientIsDay: Boolean? = null
+
     fun setWeather(condition: WeatherCondition, isDay: Boolean) {
         this.condition = condition
         this.isDay = isDay
         particlesInitialized = false
+        cachedGradient = null
         invalidate()
     }
 
@@ -69,6 +76,7 @@ class WeatherBackgroundView @JvmOverloads constructor(
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         particlesInitialized = false
+        cachedGradient = null
     }
 
     private fun initParticles() {
@@ -187,11 +195,18 @@ class WeatherBackgroundView @JvmOverloads constructor(
     }
 
     private fun drawSky(canvas: Canvas) {
-        val (topColor, bottomColor) = getSkyColors()
-        paint.shader = LinearGradient(
-            0f, 0f, 0f, height.toFloat(),
-            topColor, bottomColor, Shader.TileMode.CLAMP
-        )
+        if (cachedGradient == null || cachedGradientHeight != height
+            || cachedGradientCondition != condition || cachedGradientIsDay != isDay) {
+            val (topColor, bottomColor) = getSkyColors()
+            cachedGradient = LinearGradient(
+                0f, 0f, 0f, height.toFloat(),
+                topColor, bottomColor, Shader.TileMode.CLAMP
+            )
+            cachedGradientHeight = height
+            cachedGradientCondition = condition
+            cachedGradientIsDay = isDay
+        }
+        paint.shader = cachedGradient
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
         paint.shader = null
     }
