@@ -24,6 +24,8 @@ class ScreensaverConfigTest {
         featureFont = "sans-serif",
         weatherLocation = "",
         weatherUpdateFreq = 1_800_000L,
+        weatherLat = 0f,
+        weatherLon = 0f,
         weatherUseGps = false
     )
 
