@@ -16,20 +16,12 @@ object AlarmHelper {
         return alarmManager?.nextAlarmClock?.triggerTime
     }
 
-    /**
-     * Formats the time until the next alarm in a human-readable format
-     * Returns null if no alarm is set
-     */
-    fun formatNextAlarmCountdown(context: Context): String? {
-        val nextAlarmTime = getNextAlarmTime(context) ?: return null
-        val currentTime = System.currentTimeMillis()
-        val timeDiff = nextAlarmTime - currentTime
+    internal fun formatCountdown(timeDiffMs: Long): String? {
+        if (timeDiffMs <= 0) return null
 
-        if (timeDiff <= 0) return null
-
-        val days = TimeUnit.MILLISECONDS.toDays(timeDiff)
-        val hours = TimeUnit.MILLISECONDS.toHours(timeDiff) % 24
-        val minutes = TimeUnit.MILLISECONDS.toMinutes(timeDiff) % 60
+        val days = TimeUnit.MILLISECONDS.toDays(timeDiffMs)
+        val hours = TimeUnit.MILLISECONDS.toHours(timeDiffMs) % 24
+        val minutes = TimeUnit.MILLISECONDS.toMinutes(timeDiffMs) % 60
 
         return buildString {
             append("Alarm in ")
@@ -48,6 +40,16 @@ object AlarmHelper {
                 append("$minutes minute${if (minutes != 1L) "s" else ""}")
             }
         }
+    }
+
+    /**
+     * Formats the time until the next alarm in a human-readable format
+     * Returns null if no alarm is set
+     */
+    fun formatNextAlarmCountdown(context: Context): String? {
+        val nextAlarmTime = getNextAlarmTime(context) ?: return null
+        val timeDiff = nextAlarmTime - System.currentTimeMillis()
+        return formatCountdown(timeDiff)
     }
 
     /**

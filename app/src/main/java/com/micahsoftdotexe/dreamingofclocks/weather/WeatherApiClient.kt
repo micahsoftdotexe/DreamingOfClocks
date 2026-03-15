@@ -11,6 +11,43 @@ import java.net.URLEncoder
 object WeatherApiClient {
     private const val TAG = "WeatherAPI"
 
+    internal fun parseGeocode(body: String): Pair<Double, Double>? {
+        val json = JSONObject(body)
+        val results = json.optJSONArray("results") ?: return null
+        if (results.length() == 0) return null
+        val first = results.getJSONObject(0)
+        return Pair(first.getDouble("latitude"), first.getDouble("longitude"))
+    }
+
+    internal fun parseGeocodeSearch(body: String): List<GeocodingResult> {
+        val json = JSONObject(body)
+        val results = json.optJSONArray("results") ?: return emptyList()
+        return (0 until results.length()).map { i ->
+            val obj = results.getJSONObject(i)
+            GeocodingResult(
+                name = obj.getString("name"),
+                admin1 = if (obj.has("admin1")) obj.getString("admin1") else null,
+                country = if (obj.has("country")) obj.getString("country") else null,
+                latitude = obj.getDouble("latitude"),
+                longitude = obj.getDouble("longitude")
+            )
+        }
+    }
+
+    internal fun parseWeather(body: String): WeatherData? {
+        return try {
+            val json = JSONObject(body)
+            val current = json.getJSONObject("current_weather")
+            val wmoCode = current.getInt("weathercode")
+            val temperature = current.getDouble("temperature")
+            val isDay = current.getInt("is_day") == 1
+            val condition = WeatherCondition.fromWmoCode(wmoCode)
+            WeatherData(condition, temperature, isDay)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     suspend fun geocode(query: String): Pair<Double, Double>? = withContext(Dispatchers.IO) {
         try {
             val encoded = URLEncoder.encode(query, "UTF-8")
@@ -21,14 +58,9 @@ object WeatherApiClient {
             try {
                 val body = conn.inputStream.bufferedReader().readText()
                 Log.d(TAG, "Geocode response: $body")
-                val json = JSONObject(body)
-                val results = json.optJSONArray("results") ?: return@withContext null
-                if (results.length() == 0) return@withContext null
-                val first = results.getJSONObject(0)
-                val lat = first.getDouble("latitude")
-                val lon = first.getDouble("longitude")
-                Log.d(TAG, "Geocoded '$query' -> ($lat, $lon)")
-                Pair(lat, lon)
+                val result = parseGeocode(body)
+                if (result != null) Log.d(TAG, "Geocoded '$query' -> (${result.first}, ${result.second})")
+                result
             } finally {
                 conn.disconnect()
             }
@@ -47,18 +79,7 @@ object WeatherApiClient {
             conn.readTimeout = 10_000
             try {
                 val body = conn.inputStream.bufferedReader().readText()
-                val json = JSONObject(body)
-                val results = json.optJSONArray("results") ?: return@withContext emptyList()
-                (0 until results.length()).map { i ->
-                    val obj = results.getJSONObject(i)
-                    GeocodingResult(
-                        name = obj.getString("name"),
-                        admin1 = if (obj.has("admin1")) obj.getString("admin1") else null,
-                        country = if (obj.has("country")) obj.getString("country") else null,
-                        latitude = obj.getDouble("latitude"),
-                        longitude = obj.getDouble("longitude")
-                    )
-                }
+                parseGeocodeSearch(body)
             } finally {
                 conn.disconnect()
             }
@@ -79,14 +100,9 @@ object WeatherApiClient {
             try {
                 val body = conn.inputStream.bufferedReader().readText()
                 Log.d(TAG, "Weather response: $body")
-                val json = JSONObject(body)
-                val current = json.getJSONObject("current_weather")
-                val wmoCode = current.getInt("weathercode")
-                val temperature = current.getDouble("temperature")
-                val isDay = current.getInt("is_day") == 1
-                val condition = WeatherCondition.fromWmoCode(wmoCode)
-                Log.d(TAG, "Weather: code=$wmoCode -> $condition, temp=$temperature, isDay=$isDay")
-                WeatherData(condition, temperature, isDay)
+                val result = parseWeather(body)
+                if (result != null) Log.d(TAG, "Weather: ${result.condition}, temp=${result.temperature}, isDay=${result.isDay}")
+                result
             } finally {
                 conn.disconnect()
             }

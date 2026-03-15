@@ -8,11 +8,15 @@ import androidx.core.graphics.toColorInt
 import com.micahsoftdotexe.dreamingofclocks.utils.resolveTypeface
 
 object ClockConfigurator {
+    internal fun buildClockFormat(is24Hour: Boolean, showSeconds: Boolean): String {
+        val hourString = if (is24Hour) "HH" else "hh"
+        val secondString = if (showSeconds) ":ss" else ""
+        val ampmString = if (is24Hour) "" else " a"
+        return "$hourString:mm$secondString$ampmString"
+    }
+
     fun applyClockFormat(textClock: TextClock, config: PreferencesManager.ScreensaverConfig) {
-        val secondString = if (config.showSeconds) ":ss" else ""
-        val hourString = if (config.is24Hour) "HH" else "hh"
-        val ampmString = if (config.is24Hour) "" else " a"
-        val format = "$hourString:mm$secondString$ampmString"
+        val format = buildClockFormat(config.is24Hour, config.showSeconds)
         textClock.format24Hour = format
         textClock.format12Hour = format
     }
