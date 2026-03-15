@@ -9,6 +9,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 
+sealed interface FetchResult {
+    data class Success(val data: WeatherData) : FetchResult
+    data object NoLocation : FetchResult
+    data class LocationNotFound(val query: String) : FetchResult
+    data object FetchFailed : FetchResult
+}
+
 object WeatherUpdateScheduler {
     private const val TAG = "WeatherAPI"
 
@@ -23,7 +30,8 @@ object WeatherUpdateScheduler {
                 val updateFreqMs = config.weatherUpdateFreq
 
                 if (WeatherCache.isStale(context, updateFreqMs)) {
-                    performFetch(context, config, onUpdate)
+                    val result = performFetch(context, config)
+                    if (result is FetchResult.Success) onUpdate(result.data)
                 } else {
                     val cached = WeatherCache.load(context)
                     if (cached != null) onUpdate(cached)
@@ -37,33 +45,42 @@ object WeatherUpdateScheduler {
     fun fetchNow(
         context: Context,
         scope: CoroutineScope,
-        onUpdate: (WeatherData?) -> Unit
+        onResult: (FetchResult) -> Unit
     ) {
         scope.launch {
             val config = PreferencesManager.loadConfig(context)
-            val data = performFetch(context, config, null)
-            onUpdate(data)
+            val result = performFetch(context, config)
+            onResult(result)
         }
     }
 
     private suspend fun performFetch(
         context: Context,
         config: PreferencesManager.ScreensaverConfig,
-        onUpdate: ((WeatherData) -> Unit)?
-    ): WeatherData? {
-        val coords = resolveLocation(context, config)
-        if (coords == null) {
+    ): FetchResult {
+        val locationResult = resolveLocation(context, config)
+        if (locationResult == null) {
+            // Determine if it's no-location or location-not-found
+            val query = config.weatherLocation
+            if (!config.weatherUseGps && query.isBlank()) {
+                Log.e(TAG, "No location configured")
+                return FetchResult.NoLocation
+            }
+            if (!config.weatherUseGps && query.isNotBlank()) {
+                Log.e(TAG, "Location not found: $query")
+                return FetchResult.LocationNotFound(query)
+            }
             Log.e(TAG, "Could not resolve location")
-            return null
+            return FetchResult.FetchFailed
         }
-        val (lat, lon) = coords
+        val (lat, lon) = locationResult
         val data = WeatherApiClient.fetchWeather(lat, lon)
         if (data != null) {
             WeatherCache.save(context, data)
-            onUpdate?.invoke(data)
             Log.d(TAG, "Weather updated: ${data.condition}, ${data.temperature}°")
+            return FetchResult.Success(data)
         }
-        return data
+        return FetchResult.FetchFailed
     }
 
     private suspend fun resolveLocation(
@@ -81,6 +98,11 @@ object WeatherUpdateScheduler {
             }
             if (active != null) return active
             Log.d(TAG, "GPS location unavailable, falling back to text location")
+        }
+
+        // Use coordinates from search selection if available
+        if (!config.weatherLat.isNaN() && !config.weatherLon.isNaN()) {
+            return Pair(config.weatherLat.toDouble(), config.weatherLon.toDouble())
         }
 
         val locationQuery = config.weatherLocation

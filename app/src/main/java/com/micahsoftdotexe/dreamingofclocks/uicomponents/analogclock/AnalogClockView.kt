@@ -25,6 +25,9 @@ class AnalogClockView @JvmOverloads constructor(
 
     private var template: ClockTemplate = ClockTemplate.CLASSIC
     private var handColor: Int = Color.WHITE
+    private var cachedTicks: List<TickLine>? = null
+
+    private data class TickLine(val startX: Float, val startY: Float, val endX: Float, val endY: Float, val strokeWidth: Float)
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val handler = Handler(Looper.getMainLooper())
@@ -42,6 +45,7 @@ class AnalogClockView @JvmOverloads constructor(
 
     fun setTemplate(t: ClockTemplate) {
         template = t
+        cachedTicks = null
         invalidate()
     }
 
@@ -58,6 +62,11 @@ class AnalogClockView @JvmOverloads constructor(
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         handler.removeCallbacks(updateRunnable)
+    }
+
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        cachedTicks = null
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -127,33 +136,40 @@ class AnalogClockView @JvmOverloads constructor(
         }
     }
 
+    private fun buildTicks(cx: Float, cy: Float, radius: Float, base: Float): List<TickLine> {
+        val face = template.face
+        val ticks = mutableListOf<TickLine>()
+        for (i in 0 until 60) {
+            val isHourMark = i % 5 == 0
+            val show = if (isHourMark) face.showHourTicks else face.showMinuteTicks
+            if (!show) continue
+            val lengthFraction = if (isHourMark) face.hourTickLengthFraction else face.minuteTickLengthFraction
+            val widthDp = if (isHourMark) face.hourTickWidthDp else face.minuteTickWidthDp
+            val tickLength = base * lengthFraction
+            val angle = Math.toRadians((i * 6f - 90f).toDouble())
+            ticks.add(TickLine(
+                startX = cx + (radius - tickLength) * cos(angle).toFloat(),
+                startY = cy + (radius - tickLength) * sin(angle).toFloat(),
+                endX = cx + radius * cos(angle).toFloat(),
+                endY = cy + radius * sin(angle).toFloat(),
+                strokeWidth = dpToPx(widthDp)
+            ))
+        }
+        return ticks
+    }
+
     private fun drawTicks(canvas: Canvas, cx: Float, cy: Float, radius: Float, base: Float) {
         val face = template.face
         if (!face.showHourTicks && !face.showMinuteTicks) return
-
+        val ticks = cachedTicks ?: buildTicks(cx, cy, radius, base).also { cachedTicks = it }
         paint.reset()
         paint.isAntiAlias = true
         paint.style = Paint.Style.STROKE
         paint.color = handColor
         paint.strokeCap = Paint.Cap.ROUND
-
-        for (i in 0 until 60) {
-            val isHourMark = i % 5 == 0
-            val show = if (isHourMark) face.showHourTicks else face.showMinuteTicks
-            if (!show) continue
-
-            val lengthFraction = if (isHourMark) face.hourTickLengthFraction else face.minuteTickLengthFraction
-            val widthDp = if (isHourMark) face.hourTickWidthDp else face.minuteTickWidthDp
-            val tickLength = base * lengthFraction
-            val angle = Math.toRadians((i * 6f - 90f).toDouble())
-
-            val outerX = cx + radius * cos(angle).toFloat()
-            val outerY = cy + radius * sin(angle).toFloat()
-            val innerX = cx + (radius - tickLength) * cos(angle).toFloat()
-            val innerY = cy + (radius - tickLength) * sin(angle).toFloat()
-
-            paint.strokeWidth = dpToPx(widthDp)
-            canvas.drawLine(innerX, innerY, outerX, outerY, paint)
+        for (tick in ticks) {
+            paint.strokeWidth = tick.strokeWidth
+            canvas.drawLine(tick.startX, tick.startY, tick.endX, tick.endY, paint)
         }
     }
 

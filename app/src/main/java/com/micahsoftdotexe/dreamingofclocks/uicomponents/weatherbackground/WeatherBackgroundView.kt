@@ -1,6 +1,9 @@
 package com.micahsoftdotexe.dreamingofclocks.uicomponents.weatherbackground
 
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
@@ -8,6 +11,7 @@ import android.graphics.Paint
 import android.graphics.Shader
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.util.AttributeSet
 import android.view.View
 import com.micahsoftdotexe.dreamingofclocks.weather.WeatherCondition
@@ -25,12 +29,20 @@ class WeatherBackgroundView @JvmOverloads constructor(
     private var isDay = true
     private var frameCount = 0L
 
+    private var isPowerSaveMode = false
+    private val powerManager by lazy { context.getSystemService(Context.POWER_SERVICE) as PowerManager }
+    private val powerSaveReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            isPowerSaveMode = powerManager.isPowerSaveMode
+        }
+    }
+
     private val handler = Handler(Looper.getMainLooper())
     private val updateRunnable = object : Runnable {
         override fun run() {
             frameCount++
             invalidate()
-            handler.postDelayed(this, 33L) // ~30fps
+            handler.postDelayed(this, getFrameDelay())
         }
     }
 
@@ -63,14 +75,27 @@ class WeatherBackgroundView @JvmOverloads constructor(
         invalidate()
     }
 
+    private fun getFrameDelay(): Long {
+        val baseFps = when (condition) {
+            WeatherCondition.CLEAR -> 66L                          // 15fps: slow sun rays / star twinkle
+            WeatherCondition.FOG -> 66L                            // 15fps: slow fog drift
+            WeatherCondition.PARTLY_CLOUDY, WeatherCondition.CLOUDY -> 50L  // 20fps: cloud drift
+            WeatherCondition.RAIN, WeatherCondition.SNOW, WeatherCondition.THUNDERSTORM -> 33L // 30fps: fast particles
+        }
+        return if (isPowerSaveMode) baseFps * 2 else baseFps
+    }
+
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
+        isPowerSaveMode = powerManager.isPowerSaveMode
+        context.registerReceiver(powerSaveReceiver, IntentFilter(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED))
         handler.post(updateRunnable)
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         handler.removeCallbacks(updateRunnable)
+        context.unregisterReceiver(powerSaveReceiver)
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {

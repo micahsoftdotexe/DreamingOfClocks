@@ -31,7 +31,14 @@ import com.micahsoftdotexe.dreamingofclocks.activities.settings.AppearanceSectio
 import com.micahsoftdotexe.dreamingofclocks.activities.settings.ClockTypeSection
 import com.micahsoftdotexe.dreamingofclocks.activities.settings.FeaturesSection
 import com.micahsoftdotexe.dreamingofclocks.activities.settings.FormattingSection
+import com.micahsoftdotexe.dreamingofclocks.weather.FetchResult
+import com.micahsoftdotexe.dreamingofclocks.weather.GeocodingResult
+import com.micahsoftdotexe.dreamingofclocks.weather.WeatherApiClient
+import com.micahsoftdotexe.dreamingofclocks.weather.WeatherCache
 import com.micahsoftdotexe.dreamingofclocks.weather.WeatherUpdateScheduler
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_24_HOUR
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_ANALOG_HAND_COLOR
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_ANALOG_TEMPLATE
@@ -48,6 +55,8 @@ import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesMana
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_TEXT_COLOR
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_WEATHER_LOCATION
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_WEATHER_UPDATE_FREQ
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_WEATHER_LAT
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_WEATHER_LON
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_WEATHER_USE_GPS
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.PREFS_NAME
 import com.micahsoftdotexe.dreamingofclocks.services.template.TemplateManager
@@ -92,6 +101,10 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
     var weatherLocation by remember { mutableStateOf(prefs.getString(KEY_WEATHER_LOCATION, "") ?: "") }
     var weatherUpdateFreq by remember { mutableStateOf(prefs.getLong(KEY_WEATHER_UPDATE_FREQ, 1_800_000L)) }
     var weatherUseGps by remember { mutableStateOf(prefs.getBoolean(KEY_WEATHER_USE_GPS, false)) }
+    var locationError by remember { mutableStateOf<String?>(null) }
+    var locationSearchResults by remember { mutableStateOf<List<GeocodingResult>>(emptyList()) }
+    var isSearchingLocation by remember { mutableStateOf(false) }
+    var locationSearchJob by remember { mutableStateOf<Job?>(null) }
 
     // Location permission launcher
     val locationPermissionLauncher = rememberLauncherForActivityResult(
@@ -189,20 +202,55 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
                     }
                 },
                 weatherLocation = weatherLocation,
-                onWeatherLocationChange = { weatherLocation = it; prefs.edit { putString(KEY_WEATHER_LOCATION, it) } },
+                onLocationQueryChange = { query ->
+                    weatherLocation = query
+                    locationError = null
+                    prefs.edit { putString(KEY_WEATHER_LOCATION, query) }
+                    // Clear stored coords since user is typing a new query
+                    prefs.edit {
+                        remove(KEY_WEATHER_LAT)
+                        remove(KEY_WEATHER_LON)
+                    }
+                    // Debounced search
+                    locationSearchJob?.cancel()
+                    if (query.length >= 2) {
+                        locationSearchJob = coroutineScope.launch {
+                            delay(300L)
+                            isSearchingLocation = true
+                            locationSearchResults = WeatherApiClient.geocodeSearch(query)
+                            isSearchingLocation = false
+                        }
+                    } else {
+                        locationSearchResults = emptyList()
+                    }
+                },
+                locationError = locationError,
+                locationSearchResults = locationSearchResults,
+                onLocationSelected = { result ->
+                    weatherLocation = result.displayName
+                    locationError = null
+                    locationSearchResults = emptyList()
+                    locationSearchJob?.cancel()
+                    prefs.edit {
+                        putString(KEY_WEATHER_LOCATION, result.displayName)
+                        putFloat(KEY_WEATHER_LAT, result.latitude.toFloat())
+                        putFloat(KEY_WEATHER_LON, result.longitude.toFloat())
+                    }
+                    WeatherCache.saveLocation(context, result.displayName, result.latitude, result.longitude)
+                },
+                isSearchingLocation = isSearchingLocation,
                 weatherUpdateFreq = weatherUpdateFreq,
                 onWeatherUpdateFreqChange = { weatherUpdateFreq = it; prefs.edit { putLong(KEY_WEATHER_UPDATE_FREQ, it) } },
                 onFetchWeatherNow = {
-                    WeatherUpdateScheduler.fetchNow(context, coroutineScope) { data ->
-                        if (data != null) {
-                            Toast.makeText(
-                                context,
-                                "Weather: ${data.condition.name}, ${data.temperature}°",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        } else {
-                            Toast.makeText(context, "Weather fetch failed", Toast.LENGTH_SHORT).show()
+                    WeatherUpdateScheduler.fetchNow(context, coroutineScope) { result ->
+                        val message = when (result) {
+                            is FetchResult.Success ->
+                                "Weather: ${result.data.condition.name}, ${result.data.temperature}°"
+                            is FetchResult.NoLocation -> "No location configured"
+                            is FetchResult.LocationNotFound -> "Location not found: ${result.query}"
+                            is FetchResult.FetchFailed -> "Weather fetch failed"
                         }
+                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                     }
                 },
                 onSelectImage = { imagePickerLaunchers.requestImageSelection() },

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -43,6 +44,7 @@ import coil3.compose.rememberAsyncImagePainter
 import com.micahsoftdotexe.dreamingofclocks.activities.Section
 import com.micahsoftdotexe.dreamingofclocks.activities.SubHeading
 import com.micahsoftdotexe.dreamingofclocks.uicomponents.colorpicker.ColorPicker
+import com.micahsoftdotexe.dreamingofclocks.weather.GeocodingResult
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +54,11 @@ fun AppearanceSection(
     bgImageUri: String?, onBgImageUriChange: (String?) -> Unit,
     textColor: String, onTextColorChange: (String) -> Unit,
     weatherUseGps: Boolean, onWeatherUseGpsToggle: (Boolean) -> Unit,
-    weatherLocation: String, onWeatherLocationChange: (String) -> Unit,
+    weatherLocation: String, onLocationQueryChange: (String) -> Unit,
+    locationError: String?,
+    locationSearchResults: List<GeocodingResult>,
+    onLocationSelected: (GeocodingResult) -> Unit,
+    isSearchingLocation: Boolean,
     weatherUpdateFreq: Long, onWeatherUpdateFreqChange: (Long) -> Unit,
     onFetchWeatherNow: () -> Unit,
     onSelectImage: () -> Unit,
@@ -101,15 +107,54 @@ fun AppearanceSection(
                 Switch(checked = weatherUseGps, onCheckedChange = onWeatherUseGpsToggle)
             }
 
-            // City/zip text field (disabled when GPS enabled)
-            OutlinedTextField(
-                value = weatherLocation,
-                onValueChange = onWeatherLocationChange,
-                label = { Text("City name or zip code") },
-                enabled = !weatherUseGps,
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-            )
+            // City search with autocomplete
+            var locationExpanded by remember { mutableStateOf(false) }
+
+            ExposedDropdownMenuBox(
+                expanded = locationExpanded && locationSearchResults.isNotEmpty(),
+                onExpandedChange = { locationExpanded = it }
+            ) {
+                OutlinedTextField(
+                    value = weatherLocation,
+                    onValueChange = { query ->
+                        onLocationQueryChange(query)
+                        locationExpanded = true
+                    },
+                    label = { Text("City name") },
+                    enabled = !weatherUseGps,
+                    singleLine = true,
+                    isError = locationError != null,
+                    supportingText = if (locationError != null) {
+                        { Text(locationError) }
+                    } else null,
+                    trailingIcon = {
+                        if (isSearchingLocation) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable)
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                )
+                ExposedDropdownMenu(
+                    expanded = locationExpanded && locationSearchResults.isNotEmpty(),
+                    onDismissRequest = { locationExpanded = false }
+                ) {
+                    locationSearchResults.forEach { result ->
+                        DropdownMenuItem(
+                            text = { Text(result.displayName) },
+                            onClick = {
+                                onLocationSelected(result)
+                                locationExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
 
             // Update frequency selector
             SubHeading("Update frequency")

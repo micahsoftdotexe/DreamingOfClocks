@@ -21,6 +21,8 @@ const val KEY_CLOCK_FONT = "pref_clock_font"
     const val KEY_WEATHER_LOCATION = "pref_weather_location"
     const val KEY_WEATHER_UPDATE_FREQ = "pref_weather_update_freq"
     const val KEY_WEATHER_USE_GPS = "pref_weather_use_gps"
+    const val KEY_WEATHER_LAT = "pref_weather_lat"
+    const val KEY_WEATHER_LON = "pref_weather_lon"
 
     data class ScreensaverConfig(
         val is24Hour: Boolean,
@@ -39,6 +41,8 @@ const val KEY_CLOCK_FONT = "pref_clock_font"
         val featureFont: String,        // font family for date/alarm/media text
         val weatherLocation: String,
         val weatherUpdateFreq: Long,    // milliseconds
+        val weatherLat: Float,
+        val weatherLon: Float,
         val weatherUseGps: Boolean
     )
 
@@ -61,6 +65,8 @@ const val KEY_CLOCK_FONT = "pref_clock_font"
             featureFont = prefs.getString(KEY_FEATURE_FONT, "sans-serif") ?: "sans-serif",
             weatherLocation = prefs.getString(KEY_WEATHER_LOCATION, "") ?: "",
             weatherUpdateFreq = prefs.getLong(KEY_WEATHER_UPDATE_FREQ, 1_800_000L), // 30 min default
+            weatherLat = prefs.getFloat(KEY_WEATHER_LAT, Float.NaN),
+            weatherLon = prefs.getFloat(KEY_WEATHER_LON, Float.NaN),
             weatherUseGps = prefs.getBoolean(KEY_WEATHER_USE_GPS, false)
         )
     }

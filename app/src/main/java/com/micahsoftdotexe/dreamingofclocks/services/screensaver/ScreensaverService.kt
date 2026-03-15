@@ -37,6 +37,7 @@ class ScreensaverService : DreamService() {
     private lateinit var mediaText: TextView
     private var textClock: TextClock? = null
 
+    private lateinit var config: PreferencesManager.ScreensaverConfig
     private val mediaDisplayManager = MediaDisplayManager()
     private var weatherScope: CoroutineScope? = null
     private var weatherView: WeatherBackgroundView? = null
@@ -64,7 +65,7 @@ class ScreensaverService : DreamService() {
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
 
-        val config = PreferencesManager.loadConfig(this)
+        config = PreferencesManager.loadConfig(this)
 
         if (config.clockMode == "analog") {
             setContentView(R.layout.screensaver_analog_layout)
@@ -129,7 +130,6 @@ class ScreensaverService : DreamService() {
     }
 
     private fun updateAlarm() {
-        val config = PreferencesManager.loadConfig(this)
         if (!config.showAlarm) {
             alarmText.visibility = View.GONE
             return

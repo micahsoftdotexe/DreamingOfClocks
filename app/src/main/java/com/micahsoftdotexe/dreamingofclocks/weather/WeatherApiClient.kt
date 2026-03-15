@@ -38,6 +38,36 @@ object WeatherApiClient {
         }
     }
 
+    suspend fun geocodeSearch(query: String, count: Int = 5): List<GeocodingResult> = withContext(Dispatchers.IO) {
+        try {
+            val encoded = URLEncoder.encode(query, "UTF-8")
+            val url = URL("https://geocoding-api.open-meteo.com/v1/search?name=$encoded&count=$count")
+            val conn = url.openConnection() as HttpURLConnection
+            conn.connectTimeout = 10_000
+            conn.readTimeout = 10_000
+            try {
+                val body = conn.inputStream.bufferedReader().readText()
+                val json = JSONObject(body)
+                val results = json.optJSONArray("results") ?: return@withContext emptyList()
+                (0 until results.length()).map { i ->
+                    val obj = results.getJSONObject(i)
+                    GeocodingResult(
+                        name = obj.getString("name"),
+                        admin1 = if (obj.has("admin1")) obj.getString("admin1") else null,
+                        country = if (obj.has("country")) obj.getString("country") else null,
+                        latitude = obj.getDouble("latitude"),
+                        longitude = obj.getDouble("longitude")
+                    )
+                }
+            } finally {
+                conn.disconnect()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Geocode search failed", e)
+            emptyList()
+        }
+    }
+
     suspend fun fetchWeather(lat: Double, lon: Double): WeatherData? = withContext(Dispatchers.IO) {
         try {
             val url = URL(
