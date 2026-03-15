@@ -14,6 +14,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -105,6 +108,7 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
     var locationSearchResults by remember { mutableStateOf<List<GeocodingResult>>(emptyList()) }
     var isSearchingLocation by remember { mutableStateOf(false) }
     var locationSearchJob by remember { mutableStateOf<Job?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     // Location permission launcher
     val locationPermissionLauncher = rememberLauncherForActivityResult(
@@ -160,7 +164,11 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
 
     val builtInTemplates = remember { TemplateManager.getBuiltInTemplates() }
 
-    Surface(modifier = modifier.fillMaxSize()) {
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        modifier = modifier
+    ) { innerPadding ->
+      Surface(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
         Column(
             modifier = Modifier
                 .verticalScroll(rememberScrollState())
@@ -237,6 +245,9 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
                         putFloat(KEY_WEATHER_LON, result.longitude.toFloat())
                     }
                     WeatherCache.saveLocation(context, result.displayName, result.latitude, result.longitude)
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("Weather location set to ${result.displayName}")
+                    }
                 },
                 isSearchingLocation = isSearchingLocation,
                 weatherUpdateFreq = weatherUpdateFreq,
@@ -250,7 +261,7 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
                             is FetchResult.LocationNotFound -> "Location not found: ${result.query}"
                             is FetchResult.FetchFailed -> "Weather fetch failed"
                         }
-                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        coroutineScope.launch { snackbarHostState.showSnackbar(message) }
                     }
                 },
                 onSelectImage = { imagePickerLaunchers.requestImageSelection() },
@@ -263,5 +274,6 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
                 showMedia = showMedia, onShowMediaChange = { showMedia = it; saveBoolean(KEY_SHOW_MEDIA, it) },
             )
         }
+      }
     }
 }
