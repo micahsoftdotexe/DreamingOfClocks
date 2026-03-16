@@ -12,15 +12,12 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextClock
 import android.widget.TextView
+import com.micahsoftdotexe.dreamingofclocks.DreamingOfClocksApp
 import com.micahsoftdotexe.dreamingofclocks.R
+import com.micahsoftdotexe.dreamingofclocks.di.AppContainer
 import com.micahsoftdotexe.dreamingofclocks.services.media.MediaDisplayManager
-import com.micahsoftdotexe.dreamingofclocks.services.template.TemplateManager
 import com.micahsoftdotexe.dreamingofclocks.uicomponents.analogclock.AnalogClockView
 import com.micahsoftdotexe.dreamingofclocks.uicomponents.weatherbackground.WeatherBackgroundView
-import com.micahsoftdotexe.dreamingofclocks.utils.AlarmHelper
-import com.micahsoftdotexe.dreamingofclocks.utils.BackgroundRenderer
-import com.micahsoftdotexe.dreamingofclocks.weather.WeatherCache
-import com.micahsoftdotexe.dreamingofclocks.weather.WeatherUpdateScheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -30,6 +27,10 @@ import java.util.Date
 import java.util.Locale
 
 class ScreensaverService : DreamService() {
+
+    private val container: AppContainer by lazy {
+        (application as DreamingOfClocksApp).container
+    }
 
     private val dateFormatter = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault())
     private lateinit var dateText: TextView
@@ -65,20 +66,20 @@ class ScreensaverService : DreamService() {
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
 
-        config = PreferencesManager.loadConfig(this)
+        config = container.preferencesManager.loadConfig(this)
 
         if (config.clockMode == "analog") {
             setContentView(R.layout.screensaver_analog_layout)
 
             val clockView = findViewById<AnalogClockView>(R.id.analogClockScreensaver)
-            val template = TemplateManager.getActiveTemplate(this)
-            AnalogClockConfigurator.configureAnalogClock(clockView, template, config)
+            val template = container.templateManager.getActiveTemplate(this)
+            container.analogClockConfigurator.configureAnalogClock(clockView, template, config)
 
             dateText = findViewById(R.id.dateTextScreensaver)
             alarmText = findViewById(R.id.alarmTextScreensaver)
             mediaText = findViewById(R.id.mediaTextScreensaver)
 
-            ClockConfigurator.applyVisibility(dateText, alarmText, mediaText, config)
+            container.clockConfigurator.applyVisibility(dateText, alarmText, mediaText, config)
         } else {
             setContentView(R.layout.screensaver_layout)
 
@@ -87,24 +88,24 @@ class ScreensaverService : DreamService() {
             alarmText = findViewById(R.id.alarmTextScreensaver)
             mediaText = findViewById(R.id.mediaTextScreensaver)
 
-            ClockConfigurator.applyClockFormat(textClock!!, config)
-            ClockConfigurator.applyTextColors(listOf(textClock!!, dateText, alarmText), config)
-            ClockConfigurator.applyFonts(this, textClock!!, listOf(dateText, alarmText, mediaText), config)
-            ClockConfigurator.applyVisibility(dateText, alarmText, mediaText, config)
+            container.clockConfigurator.applyClockFormat(textClock!!, config)
+            container.clockConfigurator.applyTextColors(listOf(textClock!!, dateText, alarmText), config)
+            container.clockConfigurator.applyFonts(this, textClock!!, listOf(dateText, alarmText, mediaText), config)
+            container.clockConfigurator.applyVisibility(dateText, alarmText, mediaText, config)
         }
 
         val rootLayout = findViewById<View>(R.id.screensaver_root)
 
         if (config.clockMode == "analog") {
-            val template = TemplateManager.getActiveTemplate(this)
-            AnalogClockConfigurator.positionWidgets(
+            val template = container.templateManager.getActiveTemplate(this)
+            container.analogClockConfigurator.positionWidgets(
                 rootLayout as FrameLayout, dateText, alarmText, mediaText, template, config
             )
         }
 
         updateDate()
         if (config.showAlarm) updateAlarm()
-        BackgroundRenderer.applyBackground(rootLayout, config, resources, contentResolver)
+        container.backgroundRenderer.applyBackground(rootLayout, config, resources, contentResolver)
 
         if (config.bgMode == "weather") {
             setupWeatherBackground(rootLayout, config)
@@ -135,7 +136,7 @@ class ScreensaverService : DreamService() {
             return
         }
 
-        val alarmInfo = AlarmHelper.formatNextAlarmCountdown(this)
+        val alarmInfo = container.alarmHelper.formatNextAlarmCountdown(this)
         if (alarmInfo != null) {
             alarmText.text = alarmInfo
             alarmText.visibility = View.VISIBLE
@@ -159,7 +160,7 @@ class ScreensaverService : DreamService() {
         weatherView = bgView
 
         // Show cached weather immediately
-        val cached = WeatherCache.load(this)
+        val cached = container.weatherCache.load(this)
         if (cached != null) {
             bgView.setWeather(cached.condition, cached.isDay)
         }
@@ -197,7 +198,7 @@ class ScreensaverService : DreamService() {
         // Start periodic weather updates
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
         weatherScope = scope
-        WeatherUpdateScheduler.startPeriodicUpdates(this, scope) { data ->
+        container.weatherUpdateScheduler.startPeriodicUpdates(this, scope) { data ->
             bgView.setWeather(data.condition, data.isDay)
         }
     }

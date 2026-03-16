@@ -6,7 +6,7 @@ import android.content.Context
 //import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
-object AlarmHelper {
+class AlarmHelper {
 
     /**
      * Gets the next scheduled alarm time, or null if none exists

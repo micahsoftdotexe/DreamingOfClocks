@@ -11,7 +11,7 @@ import androidx.core.graphics.drawable.toDrawable
 import androidx.core.graphics.toColorInt
 import androidx.core.net.toUri
 
-object BackgroundRenderer {
+class BackgroundRenderer {
     fun applyBackground(
         rootView: View,
         config: PreferencesManager.ScreensaverConfig,

@@ -63,5 +63,5 @@ tmp/                    - Generated files (analysis, reports). Not in source con
 ## Conventions
 
 - Do NOT run git commands without explicit user consent
-- Singleton objects for service classes (PreferencesManager, TemplateManager, WeatherApiClient, etc.)
+- Manual DI via `AppContainer` (in `di/AppContainer.kt`). Service classes are instantiated in the container and accessed via `DreamingOfClocksApp.container`. Interfaces (`WeatherApi`, `WeatherCacheStore`, `LocationProvider`) enable test doubles for I/O-bound services.
 - Custom views use Handler-based frame loops for animation

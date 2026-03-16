@@ -5,12 +5,12 @@ import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesMana
 import android.content.Context
 import com.micahsoftdotexe.dreamingofclocks.models.ClockTemplate
 
-object TemplateManager {
+class TemplateManager(private val preferencesManager: PreferencesManager) {
 
     fun getBuiltInTemplates(): List<ClockTemplate> = ClockTemplate.ALL_BUILT_IN
 
     fun getActiveTemplate(context: Context): ClockTemplate {
-        val config = PreferencesManager.loadConfig(context)
+        val config = preferencesManager.loadConfig(context)
         return ClockTemplate.findByName(config.analogTemplate) ?: ClockTemplate.CLASSIC
     }
 }

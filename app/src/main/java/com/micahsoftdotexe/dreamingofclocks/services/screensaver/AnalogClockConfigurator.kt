@@ -11,7 +11,7 @@ import com.micahsoftdotexe.dreamingofclocks.models.WidgetPosition
 import com.micahsoftdotexe.dreamingofclocks.uicomponents.analogclock.AnalogClockView
 import kotlin.math.min
 
-object AnalogClockConfigurator {
+class AnalogClockConfigurator {
 
     fun configureAnalogClock(
         clockView: AnalogClockView,

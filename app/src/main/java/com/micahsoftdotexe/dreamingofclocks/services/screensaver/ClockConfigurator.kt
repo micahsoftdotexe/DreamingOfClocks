@@ -7,7 +7,7 @@ import android.widget.TextView
 import androidx.core.graphics.toColorInt
 import com.micahsoftdotexe.dreamingofclocks.utils.resolveTypeface
 
-object ClockConfigurator {
+class ClockConfigurator {
     internal fun buildClockFormat(is24Hour: Boolean, showSeconds: Boolean): String {
         val hourString = if (is24Hour) "HH" else "hh"
         val secondString = if (showSeconds) ":ss" else ""

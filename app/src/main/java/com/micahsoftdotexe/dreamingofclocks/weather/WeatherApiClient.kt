@@ -8,8 +8,16 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 
-object WeatherApiClient {
-    private const val TAG = "WeatherAPI"
+interface WeatherApi {
+    suspend fun geocode(query: String): Pair<Double, Double>?
+    suspend fun geocodeSearch(query: String, count: Int = 5): List<GeocodingResult>
+    suspend fun fetchWeather(lat: Double, lon: Double): WeatherData?
+}
+
+class WeatherApiClient : WeatherApi {
+    companion object {
+        private const val TAG = "WeatherAPI"
+    }
 
     internal fun parseGeocode(body: String): Pair<Double, Double>? {
         val json = JSONObject(body)
@@ -48,7 +56,7 @@ object WeatherApiClient {
         }
     }
 
-    suspend fun geocode(query: String): Pair<Double, Double>? = withContext(Dispatchers.IO) {
+    override suspend fun geocode(query: String): Pair<Double, Double>? = withContext(Dispatchers.IO) {
         try {
             val encoded = URLEncoder.encode(query, "UTF-8")
             val url = URL("https://geocoding-api.open-meteo.com/v1/search?name=$encoded&count=1")
@@ -70,7 +78,7 @@ object WeatherApiClient {
         }
     }
 
-    suspend fun geocodeSearch(query: String, count: Int = 5): List<GeocodingResult> = withContext(Dispatchers.IO) {
+    override suspend fun geocodeSearch(query: String, count: Int): List<GeocodingResult> = withContext(Dispatchers.IO) {
         try {
             val encoded = URLEncoder.encode(query, "UTF-8")
             val url = URL("https://geocoding-api.open-meteo.com/v1/search?name=$encoded&count=$count")
@@ -89,7 +97,7 @@ object WeatherApiClient {
         }
     }
 
-    suspend fun fetchWeather(lat: Double, lon: Double): WeatherData? = withContext(Dispatchers.IO) {
+    override suspend fun fetchWeather(lat: Double, lon: Double): WeatherData? = withContext(Dispatchers.IO) {
         try {
             val url = URL(
                 "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current_weather=true"
