@@ -1,6 +1,7 @@
 package com.micahsoftdotexe.dreamingofclocks.services.screensaver
 
 import android.content.Context
+import android.util.Log
 import android.view.View
 import android.widget.TextClock
 import android.widget.TextView
@@ -8,6 +9,10 @@ import androidx.core.graphics.toColorInt
 import com.micahsoftdotexe.dreamingofclocks.utils.resolveTypeface
 
 class ClockConfigurator {
+    companion object {
+        private const val TAG = "ClockConfigurator"
+    }
+
     internal fun buildClockFormat(is24Hour: Boolean, showSeconds: Boolean): String {
         val hourString = if (is24Hour) "HH" else "hh"
         val secondString = if (showSeconds) ":ss" else ""
@@ -25,8 +30,8 @@ class ClockConfigurator {
         try {
             val tc = config.textColor.toColorInt()
             views.forEach { it.setTextColor(tc) }
-        } catch (_: Exception) {
-            // ignore parse errors
+        } catch (e: Exception) {
+            Log.w(TAG, "Invalid text color, ignoring", e)
         }
     }
 
