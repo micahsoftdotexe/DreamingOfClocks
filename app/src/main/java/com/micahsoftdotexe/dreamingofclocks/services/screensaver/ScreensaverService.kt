@@ -97,9 +97,10 @@ class ScreensaverService : DreamService() {
         val rootLayout = findViewById<View>(R.id.screensaver_root)
 
         if (config.clockMode == "analog") {
+            val clockView = findViewById<AnalogClockView>(R.id.analogClockScreensaver)
             val template = container.templateManager.getActiveTemplate(this)
             container.analogClockConfigurator.positionWidgets(
-                rootLayout as FrameLayout, dateText, alarmText, mediaText, template, config
+                rootLayout as FrameLayout, clockView, dateText, alarmText, mediaText, template, config
             )
         }
 

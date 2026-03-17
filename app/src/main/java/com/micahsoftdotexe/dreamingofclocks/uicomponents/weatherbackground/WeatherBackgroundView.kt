@@ -16,7 +16,9 @@ import android.util.AttributeSet
 import android.view.View
 import com.micahsoftdotexe.dreamingofclocks.weather.WeatherCondition
 import kotlin.math.cos
+import kotlin.math.min
 import kotlin.math.sin
+import kotlin.math.sqrt
 import kotlin.random.Random
 
 class WeatherBackgroundView @JvmOverloads constructor(
@@ -250,9 +252,21 @@ class WeatherBackgroundView @JvmOverloads constructor(
     }
 
     private fun drawSun(canvas: Canvas) {
-        val cx = width * 0.8f
-        val cy = height * 0.15f
+        var cx = width * 0.8f
+        var cy = height * 0.15f
         val radius = width * 0.06f
+
+        // Keep sun + glow inside a safe circular area for round/small screens
+        val safeRadius = min(width, height) / 2f * 0.85f
+        val dx = cx - width / 2f
+        val dy = cy - height / 2f
+        val dist = sqrt(dx * dx + dy * dy)
+        val elementRadius = radius * 2.5f // glow radius
+        if (dist + elementRadius > safeRadius && dist > 0f) {
+            val scale = (safeRadius - elementRadius) / dist
+            cx = width / 2f + dx * scale
+            cy = height / 2f + dy * scale
+        }
         val rayLength = radius * 1.8f
 
         // Sun glow
@@ -282,9 +296,21 @@ class WeatherBackgroundView @JvmOverloads constructor(
     }
 
     private fun drawMoon(canvas: Canvas) {
-        val cx = width * 0.8f
-        val cy = height * 0.15f
+        var cx = width * 0.8f
+        var cy = height * 0.15f
         val radius = width * 0.05f
+
+        // Keep moon + glow inside a safe circular area for round/small screens
+        val safeRadius = min(width, height) / 2f * 0.85f
+        val dx = cx - width / 2f
+        val dy = cy - height / 2f
+        val dist = sqrt(dx * dx + dy * dy)
+        val elementRadius = radius * 2f // glow radius
+        if (dist + elementRadius > safeRadius && dist > 0f) {
+            val scale = (safeRadius - elementRadius) / dist
+            cx = width / 2f + dx * scale
+            cy = height / 2f + dy * scale
+        }
 
         // Moon glow
         paint.color = 0x20FFFFFF
