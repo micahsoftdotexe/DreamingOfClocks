@@ -152,7 +152,7 @@ class AnalogClockConfigurator {
 
             // Position on_face widgets directly
             for ((tv, wp) in onFaceWidgets) {
-                positionOnFaceWidget(tv, wp, cx, cy, base, w, h)
+                positionOnFaceWidget(tv, wp, cx, cy, radius, w, h)
             }
 
             // Position each group via sequential stacking
@@ -180,23 +180,19 @@ class AnalogClockConfigurator {
         when (position) {
             "below" -> {
                 var cursor = cy + radius + gap
-                for ((tv, wp) in sorted) {
-                    val tvW = tv.measuredWidth
+                for ((tv, _) in sorted) {
                     val tvH = tv.measuredHeight
-                    val targetX = cx + base * wp.offsetXFraction
-                    val targetY = cursor + tvH / 2f
-                    applyLayout(tv, targetX, targetY, tvW, tvH, containerW, containerH)
+                    val targetY = cursor
+                    applyVerticalLayout(tv, targetY, containerW, containerH)
                     cursor += tvH + interGap
                 }
             }
             "above" -> {
                 var cursor = cy - radius - gap
-                for ((tv, wp) in sorted) {
-                    val tvW = tv.measuredWidth
+                for ((tv, _) in sorted) {
                     val tvH = tv.measuredHeight
-                    val targetX = cx + base * wp.offsetXFraction
-                    val targetY = cursor - tvH / 2f
-                    applyLayout(tv, targetX, targetY, tvW, tvH, containerW, containerH)
+                    val targetY = cursor - tvH
+                    applyVerticalLayout(tv, targetY, containerW, containerH)
                     cursor -= tvH + interGap
                 }
             }
@@ -228,14 +224,29 @@ class AnalogClockConfigurator {
     private fun positionOnFaceWidget(
         textView: TextView,
         wp: WidgetPosition,
-        cx: Float, cy: Float, base: Float,
+        cx: Float, cy: Float, radius: Float,
         containerW: Int, containerH: Int
     ) {
         val tvW = textView.measuredWidth
         val tvH = textView.measuredHeight
-        val targetX = cx + base * wp.offsetXFraction
-        val targetY = cy + base * wp.offsetYFraction
+        val targetX = cx + radius * 2f * wp.offsetXFraction
+        val targetY = cy + radius * 2f * wp.offsetYFraction
         applyLayout(textView, targetX, targetY, tvW, tvH, containerW, containerH)
+    }
+
+    private fun applyVerticalLayout(
+        textView: TextView,
+        targetY: Float,
+        containerW: Int, containerH: Int
+    ) {
+        val tvH = textView.measuredHeight
+        val params = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT
+        )
+        params.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+        params.topMargin = targetY.toInt().coerceIn(0, containerH - tvH)
+        textView.layoutParams = params
     }
 
     private fun applyLayout(
