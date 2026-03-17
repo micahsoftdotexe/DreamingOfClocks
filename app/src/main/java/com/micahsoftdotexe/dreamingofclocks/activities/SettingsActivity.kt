@@ -27,42 +27,38 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import com.micahsoftdotexe.dreamingofclocks.activities.settings.AppearanceSection
 import com.micahsoftdotexe.dreamingofclocks.activities.settings.ClockTypeSection
 import com.micahsoftdotexe.dreamingofclocks.activities.settings.FeaturesSection
 import com.micahsoftdotexe.dreamingofclocks.activities.settings.FormattingSection
+import com.micahsoftdotexe.dreamingofclocks.DreamingOfClocksApp
 import com.micahsoftdotexe.dreamingofclocks.weather.FetchResult
 import com.micahsoftdotexe.dreamingofclocks.weather.GeocodingResult
-import com.micahsoftdotexe.dreamingofclocks.weather.WeatherApiClient
-import com.micahsoftdotexe.dreamingofclocks.weather.WeatherCache
-import com.micahsoftdotexe.dreamingofclocks.weather.WeatherUpdateScheduler
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_24_HOUR
-import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_ANALOG_HAND_COLOR
-import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_ANALOG_TEMPLATE
-import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_BG_COLOR
-import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_BG_IMAGE_URI
-import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_BG_MODE
-import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_CLOCK_FONT
-import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_CLOCK_MODE
-import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_FEATURE_FONT
-import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_SHOW_ALARM
-import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_SHOW_DATE
-import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_SHOW_MEDIA
-import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_SHOW_SECONDS
-import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_TEXT_COLOR
-import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_WEATHER_LOCATION
-import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_WEATHER_UPDATE_FREQ
-import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_WEATHER_LAT
-import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_WEATHER_LON
-import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.KEY_WEATHER_USE_GPS
-import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.PREFS_NAME
-import com.micahsoftdotexe.dreamingofclocks.services.template.TemplateManager
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.Companion.KEY_24_HOUR
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.Companion.KEY_ANALOG_HAND_COLOR
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.Companion.KEY_ANALOG_TEMPLATE
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.Companion.KEY_BG_COLOR
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.Companion.KEY_BG_IMAGE_URI
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.Companion.KEY_BG_MODE
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.Companion.KEY_CLOCK_FONT
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.Companion.KEY_CLOCK_MODE
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.Companion.KEY_FEATURE_FONT
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.Companion.KEY_SHOW_ALARM
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.Companion.KEY_SHOW_DATE
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.Companion.KEY_SHOW_MEDIA
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.Companion.KEY_SHOW_SECONDS
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.Companion.KEY_TEXT_COLOR
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.Companion.KEY_WEATHER_LOCATION
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.Companion.KEY_WEATHER_UPDATE_FREQ
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.Companion.KEY_WEATHER_LAT
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.Companion.KEY_WEATHER_LON
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.Companion.KEY_WEATHER_USE_GPS
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager.Companion.PREFS_NAME
 import com.micahsoftdotexe.dreamingofclocks.utils.rememberImagePickerLaunchers
 
 // helper composables for grouping
@@ -81,9 +77,9 @@ internal fun SubHeading(title: String) {
 
 
 @Composable
-@Preview
 fun SettingsActivity(modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    val container = remember { (context.applicationContext as DreamingOfClocksApp).container }
     val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     val coroutineScope = rememberCoroutineScope()
 
@@ -162,7 +158,7 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
         prefs.edit { putString(key, value) }
     }
 
-    val builtInTemplates = remember { TemplateManager.getBuiltInTemplates() }
+    val builtInTemplates = remember { container.templateManager.getBuiltInTemplates() }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -225,7 +221,7 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
                         locationSearchJob = coroutineScope.launch {
                             delay(300L)
                             isSearchingLocation = true
-                            locationSearchResults = WeatherApiClient.geocodeSearch(query)
+                            locationSearchResults = container.weatherApi.geocodeSearch(query)
                             isSearchingLocation = false
                         }
                     } else {
@@ -244,7 +240,7 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
                         putFloat(KEY_WEATHER_LAT, result.latitude.toFloat())
                         putFloat(KEY_WEATHER_LON, result.longitude.toFloat())
                     }
-                    WeatherCache.saveLocation(context, result.displayName, result.latitude, result.longitude)
+                    container.weatherCache.saveLocation(context, result.displayName, result.latitude, result.longitude)
                     coroutineScope.launch {
                         snackbarHostState.showSnackbar("Weather location set to ${result.displayName}")
                     }
@@ -253,7 +249,7 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
                 weatherUpdateFreq = weatherUpdateFreq,
                 onWeatherUpdateFreqChange = { weatherUpdateFreq = it; prefs.edit { putLong(KEY_WEATHER_UPDATE_FREQ, it) } },
                 onFetchWeatherNow = {
-                    WeatherUpdateScheduler.fetchNow(context, coroutineScope) { result ->
+                    container.weatherUpdateScheduler.fetchNow(context, coroutineScope) { result ->
                         val message = when (result) {
                             is FetchResult.Success ->
                                 "Weather: ${result.data.condition.name}, ${result.data.temperature}°"

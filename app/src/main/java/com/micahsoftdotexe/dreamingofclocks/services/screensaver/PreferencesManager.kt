@@ -2,27 +2,29 @@ package com.micahsoftdotexe.dreamingofclocks.services.screensaver
 
 import android.content.Context
 
-object PreferencesManager {
-    const val PREFS_NAME = "clock_prefs"
-    const val KEY_24_HOUR = "pref_24_hour"
-    const val KEY_SHOW_SECONDS = "pref_show_seconds"
-    const val KEY_SHOW_DATE = "pref_show_date"
-    const val KEY_SHOW_ALARM = "pref_show_alarm"
-    const val KEY_SHOW_MEDIA = "pref_show_media"
-    const val KEY_BG_MODE = "pref_bg_mode"
-    const val KEY_BG_COLOR = "pref_bg_color"
-    const val KEY_BG_IMAGE_URI = "pref_bg_image_uri"
-    const val KEY_TEXT_COLOR = "pref_text_color"
-    const val KEY_CLOCK_MODE = "pref_clock_mode"
-    const val KEY_ANALOG_TEMPLATE = "pref_analog_template"
-    const val KEY_ANALOG_HAND_COLOR = "pref_analog_hand_color"
-const val KEY_CLOCK_FONT = "pref_clock_font"
-    const val KEY_FEATURE_FONT = "pref_feature_font"
-    const val KEY_WEATHER_LOCATION = "pref_weather_location"
-    const val KEY_WEATHER_UPDATE_FREQ = "pref_weather_update_freq"
-    const val KEY_WEATHER_USE_GPS = "pref_weather_use_gps"
-    const val KEY_WEATHER_LAT = "pref_weather_lat"
-    const val KEY_WEATHER_LON = "pref_weather_lon"
+open class PreferencesManager {
+    companion object {
+        const val PREFS_NAME = "clock_prefs"
+        const val KEY_24_HOUR = "pref_24_hour"
+        const val KEY_SHOW_SECONDS = "pref_show_seconds"
+        const val KEY_SHOW_DATE = "pref_show_date"
+        const val KEY_SHOW_ALARM = "pref_show_alarm"
+        const val KEY_SHOW_MEDIA = "pref_show_media"
+        const val KEY_BG_MODE = "pref_bg_mode"
+        const val KEY_BG_COLOR = "pref_bg_color"
+        const val KEY_BG_IMAGE_URI = "pref_bg_image_uri"
+        const val KEY_TEXT_COLOR = "pref_text_color"
+        const val KEY_CLOCK_MODE = "pref_clock_mode"
+        const val KEY_ANALOG_TEMPLATE = "pref_analog_template"
+        const val KEY_ANALOG_HAND_COLOR = "pref_analog_hand_color"
+        const val KEY_CLOCK_FONT = "pref_clock_font"
+        const val KEY_FEATURE_FONT = "pref_feature_font"
+        const val KEY_WEATHER_LOCATION = "pref_weather_location"
+        const val KEY_WEATHER_UPDATE_FREQ = "pref_weather_update_freq"
+        const val KEY_WEATHER_USE_GPS = "pref_weather_use_gps"
+        const val KEY_WEATHER_LAT = "pref_weather_lat"
+        const val KEY_WEATHER_LON = "pref_weather_lon"
+    }
 
     data class ScreensaverConfig(
         val is24Hour: Boolean,
@@ -46,7 +48,7 @@ const val KEY_CLOCK_FONT = "pref_clock_font"
         val weatherUseGps: Boolean
     )
 
-    fun loadConfig(context: Context): ScreensaverConfig {
+    open fun loadConfig(context: Context): ScreensaverConfig {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return ScreensaverConfig(
             is24Hour = prefs.getBoolean(KEY_24_HOUR, false),

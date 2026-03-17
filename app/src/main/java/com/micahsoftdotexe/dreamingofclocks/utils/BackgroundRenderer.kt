@@ -3,6 +3,7 @@ package com.micahsoftdotexe.dreamingofclocks.utils
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager
 
 import android.content.ContentResolver
+import android.util.Log
 import android.content.res.Resources
 import android.graphics.BitmapFactory
 import android.graphics.Color
@@ -11,7 +12,11 @@ import androidx.core.graphics.drawable.toDrawable
 import androidx.core.graphics.toColorInt
 import androidx.core.net.toUri
 
-object BackgroundRenderer {
+class BackgroundRenderer {
+    companion object {
+        private const val TAG = "BackgroundRenderer"
+    }
+
     fun applyBackground(
         rootView: View,
         config: PreferencesManager.ScreensaverConfig,
@@ -30,7 +35,8 @@ object BackgroundRenderer {
                     val bmp = BitmapFactory.decodeStream(it)
                     rootView.background = bmp.toDrawable(resources)
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to load background image, falling back to color", e)
                 applyColorBackground(rootView, config.bgColor)
             }
         } else {
@@ -41,7 +47,8 @@ object BackgroundRenderer {
     private fun applyColorBackground(view: View, bgColor: String) {
         try {
             view.setBackgroundColor(bgColor.toColorInt())
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w(TAG, "Invalid background color, falling back to black", e)
             view.setBackgroundColor(Color.BLACK)
         }
     }

@@ -16,8 +16,15 @@ sealed interface FetchResult {
     data object FetchFailed : FetchResult
 }
 
-object WeatherUpdateScheduler {
-    private const val TAG = "WeatherAPI"
+class WeatherUpdateScheduler(
+    private val weatherApi: WeatherApi,
+    private val weatherCache: WeatherCacheStore,
+    private val locationProvider: LocationProvider,
+    private val preferencesManager: PreferencesManager
+) {
+    companion object {
+        private const val TAG = "WeatherAPI"
+    }
 
     fun startPeriodicUpdates(
         context: Context,
@@ -26,14 +33,14 @@ object WeatherUpdateScheduler {
     ) {
         scope.launch {
             while (true) {
-                val config = PreferencesManager.loadConfig(context)
+                val config = preferencesManager.loadConfig(context)
                 val updateFreqMs = config.weatherUpdateFreq
 
-                if (WeatherCache.isStale(context, updateFreqMs)) {
+                if (weatherCache.isStale(context, updateFreqMs)) {
                     val result = performFetch(context, config)
                     if (result is FetchResult.Success) onUpdate(result.data)
                 } else {
-                    val cached = WeatherCache.load(context)
+                    val cached = weatherCache.load(context)
                     if (cached != null) onUpdate(cached)
                 }
 
@@ -48,7 +55,7 @@ object WeatherUpdateScheduler {
         onResult: (FetchResult) -> Unit
     ) {
         scope.launch {
-            val config = PreferencesManager.loadConfig(context)
+            val config = preferencesManager.loadConfig(context)
             val result = performFetch(context, config)
             onResult(result)
         }
@@ -74,9 +81,9 @@ object WeatherUpdateScheduler {
             return FetchResult.FetchFailed
         }
         val (lat, lon) = locationResult
-        val data = WeatherApiClient.fetchWeather(lat, lon)
+        val data = weatherApi.fetchWeather(lat, lon)
         if (data != null) {
-            WeatherCache.save(context, data)
+            weatherCache.save(context, data)
             Log.d(TAG, "Weather updated: ${data.condition}, ${data.temperature}°")
             return FetchResult.Success(data)
         }
@@ -88,11 +95,11 @@ object WeatherUpdateScheduler {
         config: PreferencesManager.ScreensaverConfig
     ): Pair<Double, Double>? {
         if (config.weatherUseGps) {
-            val gps = LocationHelper.getLastKnownLocation(context)
+            val gps = locationProvider.getLastKnownLocation(context)
             if (gps != null) return gps
             Log.d(TAG, "No cached GPS location, requesting active location fix")
             val active = suspendCancellableCoroutine { cont ->
-                LocationHelper.requestLocationUpdate(context) { result ->
+                locationProvider.requestLocationUpdate(context) { result ->
                     cont.resume(result)
                 }
             }
@@ -112,15 +119,15 @@ object WeatherUpdateScheduler {
         }
 
         // Check if we have cached coords for this query
-        val cached = WeatherCache.getCachedLocation(context)
+        val cached = weatherCache.getCachedLocation(context)
         if (cached != null && cached.first == locationQuery) {
             return Pair(cached.second, cached.third)
         }
 
         // Geocode the query
-        val coords = WeatherApiClient.geocode(locationQuery)
+        val coords = weatherApi.geocode(locationQuery)
         if (coords != null) {
-            WeatherCache.saveLocation(context, locationQuery, coords.first, coords.second)
+            weatherCache.saveLocation(context, locationQuery, coords.first, coords.second)
         }
         return coords
     }

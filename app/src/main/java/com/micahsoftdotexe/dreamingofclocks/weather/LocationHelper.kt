@@ -10,8 +10,15 @@ import android.os.Looper
 import android.util.Log
 import androidx.core.content.ContextCompat
 
-object LocationHelper {
-    private const val TAG = "WeatherAPI"
+interface LocationProvider {
+    fun getLastKnownLocation(context: Context): Pair<Double, Double>?
+    fun requestLocationUpdate(context: Context, callback: (Pair<Double, Double>?) -> Unit)
+}
+
+class LocationHelper : LocationProvider {
+    companion object {
+        private const val TAG = "WeatherAPI"
+    }
 
     private fun getAvailableProvider(lm: LocationManager): String? {
         val providers = lm.getProviders(true)
@@ -22,7 +29,7 @@ object LocationHelper {
         }
     }
 
-    fun getLastKnownLocation(context: Context): Pair<Double, Double>? {
+    override fun getLastKnownLocation(context: Context): Pair<Double, Double>? {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
             != PackageManager.PERMISSION_GRANTED
         ) {
@@ -47,7 +54,7 @@ object LocationHelper {
         }
     }
 
-    fun requestLocationUpdate(context: Context, callback: (Pair<Double, Double>?) -> Unit) {
+    override fun requestLocationUpdate(context: Context, callback: (Pair<Double, Double>?) -> Unit) {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
             != PackageManager.PERMISSION_GRANTED
         ) {
