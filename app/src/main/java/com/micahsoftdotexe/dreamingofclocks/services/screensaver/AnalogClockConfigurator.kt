@@ -104,47 +104,41 @@ class AnalogClockConfigurator {
                 }
             }
 
-            // Compute maxGroupHeight across all groups (using smaller inter-widget gap)
-            var maxGroupHeight = 0f
+            // Compute max primary-axis extent across all groups (using smaller inter-widget gap)
+            var maxGroupExtent = 0f
+            var maxCrossAxis = 0f
             for ((pos, group) in groups) {
                 val isVertical = pos == "above" || pos == "below"
-                val totalSize = if (isVertical) {
+                val primarySize = if (isVertical) {
                     group.sumOf { (tv, _) -> tv.measuredHeight.toDouble() }.toFloat() +
                         (group.size - 1) * interGap
                 } else {
                     group.sumOf { (tv, _) -> tv.measuredWidth.toDouble() }.toFloat() +
                         (group.size - 1) * interGap
                 }
-                maxGroupHeight = maxOf(maxGroupHeight, totalSize)
+                maxGroupExtent = maxOf(maxGroupExtent, primarySize)
+                val crossSize = if (isVertical)
+                    group.maxOf { (tv, _) -> tv.measuredWidth.toFloat() }
+                else
+                    group.maxOf { (tv, _) -> tv.measuredHeight.toFloat() }
+                maxCrossAxis = maxOf(maxCrossAxis, crossSize)
             }
 
             // On round screens, compute effective half-distance accounting for circular bezel
             val effectiveHalf = if (isRound && groups.isNotEmpty()) {
-                var maxCrossAxis = 0f
-                for ((pos, group) in groups) {
-                    val isVertical = pos == "above" || pos == "below"
-                    val crossSize = if (isVertical)
-                        group.maxOf { (tv, _) -> tv.measuredWidth.toFloat() }
-                    else
-                        group.maxOf { (tv, _) -> tv.measuredHeight.toFloat() }
-                    maxCrossAxis = maxOf(maxCrossAxis, crossSize)
-                }
                 val halfBase = base / 2f
                 sqrt(halfBase * halfBase - (maxCrossAxis / 2f) * (maxCrossAxis / 2f))
             } else base / 2f
 
             // Auto-shrink clock face if widgets can't fit between clock edge and screen edge
+            val maxRadius = if (maxGroupExtent > 0f)
+                (effectiveHalf - maxGroupExtent - gap).coerceAtLeast(base * 0.2f)
+            else Float.MAX_VALUE
+
             val radius: Float
-            if (maxGroupHeight > 0f) {
-                val maxRadius = (effectiveHalf - maxGroupHeight - gap)
-                    .coerceAtLeast(base * 0.2f)
-                if (maxRadius < templateRadius) {
-                    radius = maxRadius
-                    clockView.radiusFractionOverride = radius / base
-                } else {
-                    radius = templateRadius
-                    clockView.radiusFractionOverride = null
-                }
+            if (maxRadius < templateRadius) {
+                radius = maxRadius
+                clockView.radiusFractionOverride = radius / base
             } else {
                 radius = templateRadius
                 clockView.radiusFractionOverride = null
