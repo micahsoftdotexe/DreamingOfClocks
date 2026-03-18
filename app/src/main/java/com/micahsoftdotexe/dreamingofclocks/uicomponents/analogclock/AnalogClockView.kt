@@ -27,6 +27,9 @@ class AnalogClockView @JvmOverloads constructor(
     private var handColor: Int = Color.WHITE
     private var cachedTicks: List<TickLine>? = null
 
+    var radiusFractionOverride: Float? = null
+        set(value) { field = value; cachedTicks = null; invalidate() }
+
     private data class TickLine(val startX: Float, val startY: Float, val endX: Float, val endY: Float, val strokeWidth: Float)
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -77,7 +80,7 @@ class AnalogClockView @JvmOverloads constructor(
         val cx = width / 2f
         val cy = height / 2f
         val base = min(width, height).toFloat()
-        val radius = base * face.radiusFraction
+        val radius = base * (radiusFractionOverride ?: face.radiusFraction)
 
         // Face fill
         face.fillColor?.let { hex ->
@@ -175,7 +178,8 @@ class AnalogClockView @JvmOverloads constructor(
 
     private fun drawHourNumbers(canvas: Canvas, cx: Float, cy: Float, radius: Float, base: Float) {
         val face = template.face
-        val fontSize = base * face.numberFontSizeFraction
+        val radiusScale = radiusFractionOverride?.let { it / face.radiusFraction } ?: 1f
+        val fontSize = base * face.numberFontSizeFraction * radiusScale
         paint.reset()
         paint.isAntiAlias = true
         paint.style = Paint.Style.FILL

@@ -3,6 +3,7 @@ package com.micahsoftdotexe.dreamingofclocks.di
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.AnalogClockConfigurator
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.ClockConfigurator
 import com.micahsoftdotexe.dreamingofclocks.services.screensaver.PreferencesManager
+import com.micahsoftdotexe.dreamingofclocks.services.screensaver.ScreensaverLayoutManager
 import com.micahsoftdotexe.dreamingofclocks.services.template.TemplateManager
 import com.micahsoftdotexe.dreamingofclocks.utils.AlarmHelper
 import com.micahsoftdotexe.dreamingofclocks.utils.BackgroundRenderer
@@ -24,6 +25,7 @@ class AppContainer {
     val analogClockConfigurator = AnalogClockConfigurator()
     val backgroundRenderer = BackgroundRenderer()
     val alarmHelper = AlarmHelper()
+    val screensaverLayoutManager = ScreensaverLayoutManager(clockConfigurator, analogClockConfigurator, templateManager)
     val weatherUpdateScheduler = WeatherUpdateScheduler(
         weatherApi, weatherCache, locationProvider, preferencesManager
     )
