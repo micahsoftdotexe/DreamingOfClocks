@@ -62,6 +62,7 @@ class WeatherBackgroundView @JvmOverloads constructor(
     private var nextLightningFrame = Random.nextInt(90, 240) // 3-8 seconds at 30fps
 
     private var particlesInitialized = false
+    private var isReceiverRegistered = false
 
     // Cached sky gradient
     private var cachedGradient: LinearGradient? = null
@@ -90,14 +91,20 @@ class WeatherBackgroundView @JvmOverloads constructor(
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         isPowerSaveMode = powerManager.isPowerSaveMode
-        context.registerReceiver(powerSaveReceiver, IntentFilter(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED))
+        if (!isReceiverRegistered) {
+            context.registerReceiver(powerSaveReceiver, IntentFilter(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED))
+            isReceiverRegistered = true
+        }
         handler.post(updateRunnable)
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         handler.removeCallbacks(updateRunnable)
-        context.unregisterReceiver(powerSaveReceiver)
+        if (isReceiverRegistered) {
+            context.unregisterReceiver(powerSaveReceiver)
+            isReceiverRegistered = false
+        }
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {

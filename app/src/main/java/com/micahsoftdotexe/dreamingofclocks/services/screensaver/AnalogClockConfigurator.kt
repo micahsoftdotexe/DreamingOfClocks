@@ -6,6 +6,7 @@ import android.view.Gravity
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.TextView
+import android.util.Log
 import androidx.core.graphics.toColorInt
 import com.micahsoftdotexe.dreamingofclocks.models.ClockTemplate
 import com.micahsoftdotexe.dreamingofclocks.models.WidgetPosition
@@ -16,6 +17,10 @@ import androidx.core.view.isGone
 
 class AnalogClockConfigurator {
 
+    companion object {
+        private const val TAG = "AnalogClockConfig"
+    }
+
     fun configureAnalogClock(
         clockView: AnalogClockView,
         template: ClockTemplate,
@@ -24,8 +29,8 @@ class AnalogClockConfigurator {
         clockView.setTemplate(template)
         try {
             clockView.setHandColor(config.analogHandColor.toColorInt())
-        } catch (_: Exception) {
-            // keep default
+        } catch (e: Exception) {
+            Log.w(TAG, "Invalid hand color: ${config.analogHandColor}", e)
         }
     }
 
@@ -44,7 +49,9 @@ class AnalogClockConfigurator {
             dateText.setTextColor(tc)
             alarmText.setTextColor(tc)
             mediaText.setTextColor(tc)
-        } catch (_: Exception) { }
+        } catch (e: Exception) {
+            Log.w(TAG, "Invalid text color: ${config.textColor}", e)
+        }
 
         // Scale font sizes down on small screens (reference: 480dp)
         val density = container.resources.displayMetrics.density

@@ -6,12 +6,18 @@ import android.media.MediaMetadata
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
+import android.os.Handler
+import android.os.Looper
 
 class MediaMetadataHelper(private val context: Context) {
 
     private var mediaSessionManager: MediaSessionManager? = null
     private var activeController: MediaController? = null
-    private var callback: MediaCallback? = null
+    @Volatile private var callback: MediaCallback? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val sessionListener = MediaSessionManager.OnActiveSessionsChangedListener { controllers ->
+        mainHandler.post { updateActiveController(controllers) }
+    }
 
     interface MediaCallback {
         fun onMediaInfoChanged(info: MediaInfo?)
@@ -34,10 +40,8 @@ class MediaMetadataHelper(private val context: Context) {
             val controllers = mediaSessionManager?.getActiveSessions(componentName) ?: emptyList()
             updateActiveController(controllers)
 
-            mediaSessionManager?.addOnActiveSessionsChangedListener({ controllers ->
-                updateActiveController(controllers)
-            }, componentName)
-        } catch (e: SecurityException) {
+            mediaSessionManager?.addOnActiveSessionsChangedListener(sessionListener, componentName)
+        } catch (_: SecurityException) {
             // User hasn't granted notification listener permission
             callback.onMediaInfoChanged(null)
         }
@@ -86,6 +90,7 @@ class MediaMetadataHelper(private val context: Context) {
 
     fun stopListening() {
         activeController?.unregisterCallback(controllerCallback)
+        mediaSessionManager?.removeOnActiveSessionsChangedListener(sessionListener)
         callback = null
     }
 
