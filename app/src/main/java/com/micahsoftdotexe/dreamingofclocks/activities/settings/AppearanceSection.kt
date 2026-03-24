@@ -32,7 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -108,7 +108,7 @@ fun AppearanceSection(
             }
 
             // City search with autocomplete
-            var locationExpanded by remember { mutableStateOf(false) }
+            var locationExpanded by rememberSaveable { mutableStateOf(false) }
 
             ExposedDropdownMenuBox(
                 expanded = locationExpanded && locationSearchResults.isNotEmpty(),
@@ -164,7 +164,7 @@ fun AppearanceSection(
                 "1 hour" to 3_600_000L,
                 "3 hours" to 10_800_000L
             )
-            var freqExpanded by remember { mutableStateOf(false) }
+            var freqExpanded by rememberSaveable { mutableStateOf(false) }
             val selectedFreqLabel = freqOptions.find { it.second == weatherUpdateFreq }?.first ?: "30 minutes"
             ExposedDropdownMenuBox(
                 expanded = freqExpanded,
@@ -234,7 +234,7 @@ fun AppearanceSection(
                             .clickable { onSelectImage() }
                     ) {
                         Image(
-                            painter = rememberAsyncImagePainter(bgImageUri?.toUri()),
+                            painter = rememberAsyncImagePainter(bgImageUri.toUri()),
                             contentDescription = "Background preview",
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop

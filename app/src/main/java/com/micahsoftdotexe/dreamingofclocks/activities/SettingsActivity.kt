@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -83,26 +84,26 @@ fun SettingsActivity(modifier: Modifier = Modifier) {
     val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     val coroutineScope = rememberCoroutineScope()
 
-    var is24Hour by remember { mutableStateOf(prefs.getBoolean(KEY_24_HOUR, false)) }
-    var showSeconds by remember { mutableStateOf(prefs.getBoolean(KEY_SHOW_SECONDS, false)) }
-    var showDate by remember { mutableStateOf(prefs.getBoolean(KEY_SHOW_DATE, true)) }
-    var showAlarm by remember { mutableStateOf(prefs.getBoolean(KEY_SHOW_ALARM, true)) }
-    var showMedia by remember { mutableStateOf(prefs.getBoolean(KEY_SHOW_MEDIA, false)) }
-    var bgMode by remember { mutableStateOf(prefs.getString(KEY_BG_MODE, "color") ?: "color") }
-    var bgColor by remember { mutableStateOf(prefs.getString(KEY_BG_COLOR, "#000000") ?: "#000000") }
-    var bgImageUri by remember { mutableStateOf(prefs.getString(KEY_BG_IMAGE_URI, null)) }
-    var textColor by remember { mutableStateOf(prefs.getString(KEY_TEXT_COLOR, "#FFFFFF") ?: "#FFFFFF") }
-    var clockMode by remember { mutableStateOf(prefs.getString(KEY_CLOCK_MODE, "digital") ?: "digital") }
-    var analogTemplate by remember { mutableStateOf(prefs.getString(KEY_ANALOG_TEMPLATE, "Classic") ?: "Classic") }
-    var analogHandColor by remember { mutableStateOf(prefs.getString(KEY_ANALOG_HAND_COLOR, "#FFFFFF") ?: "#FFFFFF") }
-    var clockFont by remember { mutableStateOf(prefs.getString(KEY_CLOCK_FONT, "sans-serif") ?: "sans-serif") }
-    var featureFont by remember { mutableStateOf(prefs.getString(KEY_FEATURE_FONT, "sans-serif") ?: "sans-serif") }
-    var weatherLocation by remember { mutableStateOf(prefs.getString(KEY_WEATHER_LOCATION, "") ?: "") }
-    var weatherUpdateFreq by remember { mutableStateOf(prefs.getLong(KEY_WEATHER_UPDATE_FREQ, 1_800_000L)) }
-    var weatherUseGps by remember { mutableStateOf(prefs.getBoolean(KEY_WEATHER_USE_GPS, false)) }
-    var locationError by remember { mutableStateOf<String?>(null) }
+    var is24Hour by rememberSaveable { mutableStateOf(prefs.getBoolean(KEY_24_HOUR, false)) }
+    var showSeconds by rememberSaveable { mutableStateOf(prefs.getBoolean(KEY_SHOW_SECONDS, false)) }
+    var showDate by rememberSaveable { mutableStateOf(prefs.getBoolean(KEY_SHOW_DATE, true)) }
+    var showAlarm by rememberSaveable { mutableStateOf(prefs.getBoolean(KEY_SHOW_ALARM, true)) }
+    var showMedia by rememberSaveable { mutableStateOf(prefs.getBoolean(KEY_SHOW_MEDIA, false)) }
+    var bgMode by rememberSaveable { mutableStateOf(prefs.getString(KEY_BG_MODE, "color") ?: "color") }
+    var bgColor by rememberSaveable { mutableStateOf(prefs.getString(KEY_BG_COLOR, "#000000") ?: "#000000") }
+    var bgImageUri by rememberSaveable { mutableStateOf(prefs.getString(KEY_BG_IMAGE_URI, null)) }
+    var textColor by rememberSaveable { mutableStateOf(prefs.getString(KEY_TEXT_COLOR, "#FFFFFF") ?: "#FFFFFF") }
+    var clockMode by rememberSaveable { mutableStateOf(prefs.getString(KEY_CLOCK_MODE, "digital") ?: "digital") }
+    var analogTemplate by rememberSaveable { mutableStateOf(prefs.getString(KEY_ANALOG_TEMPLATE, "Classic") ?: "Classic") }
+    var analogHandColor by rememberSaveable { mutableStateOf(prefs.getString(KEY_ANALOG_HAND_COLOR, "#FFFFFF") ?: "#FFFFFF") }
+    var clockFont by rememberSaveable { mutableStateOf(prefs.getString(KEY_CLOCK_FONT, "sans-serif") ?: "sans-serif") }
+    var featureFont by rememberSaveable { mutableStateOf(prefs.getString(KEY_FEATURE_FONT, "sans-serif") ?: "sans-serif") }
+    var weatherLocation by rememberSaveable { mutableStateOf(prefs.getString(KEY_WEATHER_LOCATION, "") ?: "") }
+    var weatherUpdateFreq by rememberSaveable { mutableStateOf(prefs.getLong(KEY_WEATHER_UPDATE_FREQ, 1_800_000L)) }
+    var weatherUseGps by rememberSaveable { mutableStateOf(prefs.getBoolean(KEY_WEATHER_USE_GPS, false)) }
+    var locationError by rememberSaveable { mutableStateOf<String?>(null) }
     var locationSearchResults by remember { mutableStateOf<List<GeocodingResult>>(emptyList()) }
-    var isSearchingLocation by remember { mutableStateOf(false) }
+    var isSearchingLocation by rememberSaveable { mutableStateOf(false) }
     var locationSearchJob by remember { mutableStateOf<Job?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 

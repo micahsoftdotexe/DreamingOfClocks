@@ -16,7 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,7 +36,7 @@ fun FeaturesSection(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    var awaitingPermissionResult by remember { mutableStateOf(false) }
+    var awaitingPermissionResult by rememberSaveable { mutableStateOf(false) }
 
     // Re-check notification listener permission when returning from system Settings
     DisposableEffect(lifecycleOwner) {

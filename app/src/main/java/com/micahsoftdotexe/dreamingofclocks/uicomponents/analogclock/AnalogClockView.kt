@@ -32,7 +32,21 @@ class AnalogClockView @JvmOverloads constructor(
 
     private data class TickLine(val startX: Float, val startY: Float, val endX: Float, val endY: Float, val strokeWidth: Float)
 
-    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val faceFillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+    private val faceBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+    private val tickPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+    }
+    private val hourNumberPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        textAlign = Paint.Align.CENTER
+    }
+    private val hourHandPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+    private val minuteHandPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+    private val secondHandPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+    private val centerDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+
     private val handler = Handler(Looper.getMainLooper())
     private val updateRunnable = object : Runnable {
         override fun run() {
@@ -46,15 +60,48 @@ class AnalogClockView @JvmOverloads constructor(
         "XII", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI"
     )
 
+    init {
+        configurePaints()
+    }
+
     fun setTemplate(t: ClockTemplate) {
         template = t
         cachedTicks = null
+        configurePaints()
         invalidate()
     }
 
     fun setHandColor(color: Int) {
         handColor = color
+        configurePaints()
         invalidate()
+    }
+
+    private fun configurePaints() {
+        val face = template.face
+        val hands = template.hands
+
+        faceFillPaint.color = parseColor(face.fillColor, handColor)
+        faceBorderPaint.color = parseColor(face.borderColor, handColor)
+        faceBorderPaint.strokeWidth = dpToPx(face.borderWidthDp)
+        tickPaint.color = handColor
+        hourNumberPaint.color = handColor
+        hourHandPaint.apply {
+            strokeWidth = dpToPx(hands.hour.widthDp)
+            color = parseColor(hands.hour.color, handColor)
+            strokeCap = parseCap(hands.hour.cap)
+        }
+        minuteHandPaint.apply {
+            strokeWidth = dpToPx(hands.minute.widthDp)
+            color = parseColor(hands.minute.color, handColor)
+            strokeCap = parseCap(hands.minute.cap)
+        }
+        secondHandPaint.apply {
+            strokeWidth = dpToPx(hands.second.widthDp)
+            color = parseColor(hands.second.color, handColor)
+            strokeCap = parseCap(hands.second.cap)
+        }
+        centerDotPaint.color = handColor
     }
 
     override fun onAttachedToWindow() {
@@ -83,22 +130,13 @@ class AnalogClockView @JvmOverloads constructor(
         val radius = base * (radiusFractionOverride ?: face.radiusFraction)
 
         // Face fill
-        face.fillColor?.let { hex ->
-            paint.reset()
-            paint.isAntiAlias = true
-            paint.style = Paint.Style.FILL
-            paint.color = parseColor(hex, handColor)
-            canvas.drawCircle(cx, cy, radius, paint)
+        if (face.fillColor != null) {
+            canvas.drawCircle(cx, cy, radius, faceFillPaint)
         }
 
         // Border
         if (face.borderWidthDp > 0) {
-            paint.reset()
-            paint.isAntiAlias = true
-            paint.style = Paint.Style.STROKE
-            paint.strokeWidth = dpToPx(face.borderWidthDp)
-            paint.color = parseColor(face.borderColor, handColor)
-            canvas.drawCircle(cx, cy, radius, paint)
+            canvas.drawCircle(cx, cy, radius, faceBorderPaint)
         }
 
         // Tick marks
@@ -117,11 +155,11 @@ class AnalogClockView @JvmOverloads constructor(
 
         // Hour hand
         val hourAngle = (hour % 12 + minute / 60f) * 30f - 90f
-        drawHand(canvas, cx, cy, radius, hands.hour, hourAngle)
+        drawHand(canvas, cx, cy, radius, hands.hour, hourAngle, hourHandPaint)
 
         // Minute hand
         val minuteAngle = (minute + second / 60f) * 6f - 90f
-        drawHand(canvas, cx, cy, radius, hands.minute, minuteAngle)
+        drawHand(canvas, cx, cy, radius, hands.minute, minuteAngle, minuteHandPaint)
 
         // Second hand
         if (hands.second.show) {
@@ -131,11 +169,7 @@ class AnalogClockView @JvmOverloads constructor(
 
         // Center dot
         if (face.showCenterDot) {
-            paint.reset()
-            paint.isAntiAlias = true
-            paint.style = Paint.Style.FILL
-            paint.color = handColor
-            canvas.drawCircle(cx, cy, base * face.centerDotRadiusFraction, paint)
+            canvas.drawCircle(cx, cy, base * face.centerDotRadiusFraction, centerDotPaint)
         }
     }
 
@@ -165,14 +199,9 @@ class AnalogClockView @JvmOverloads constructor(
         val face = template.face
         if (!face.showHourTicks && !face.showMinuteTicks) return
         val ticks = cachedTicks ?: buildTicks(cx, cy, radius, base).also { cachedTicks = it }
-        paint.reset()
-        paint.isAntiAlias = true
-        paint.style = Paint.Style.STROKE
-        paint.color = handColor
-        paint.strokeCap = Paint.Cap.ROUND
         for (tick in ticks) {
-            paint.strokeWidth = tick.strokeWidth
-            canvas.drawLine(tick.startX, tick.startY, tick.endX, tick.endY, paint)
+            tickPaint.strokeWidth = tick.strokeWidth
+            canvas.drawLine(tick.startX, tick.startY, tick.endX, tick.endY, tickPaint)
         }
     }
 
@@ -180,14 +209,9 @@ class AnalogClockView @JvmOverloads constructor(
         val face = template.face
         val radiusScale = radiusFractionOverride?.let { it / face.radiusFraction } ?: 1f
         val fontSize = base * face.numberFontSizeFraction * radiusScale
-        paint.reset()
-        paint.isAntiAlias = true
-        paint.style = Paint.Style.FILL
-        paint.color = handColor
-        paint.textSize = fontSize
-        paint.textAlign = Paint.Align.CENTER
+        hourNumberPaint.textSize = fontSize
 
-        val fm = paint.fontMetrics
+        val fm = hourNumberPaint.fontMetrics
         val textCenterOffset = -(fm.ascent + fm.descent) / 2f
         val numberRadius = radius - base * 0.1f
 
@@ -200,11 +224,11 @@ class AnalogClockView @JvmOverloads constructor(
                 "roman" -> romanNumerals[i]
                 else -> if (i == 0) "12" else i.toString()
             }
-            canvas.drawText(text, nx, ny, paint)
+            canvas.drawText(text, nx, ny, hourNumberPaint)
         }
     }
 
-    private fun drawHand(canvas: Canvas, cx: Float, cy: Float, radius: Float, hand: HandConfig, angleDeg: Float) {
+    private fun drawHand(canvas: Canvas, cx: Float, cy: Float, radius: Float, hand: HandConfig, angleDeg: Float, handPaint: Paint) {
         val angle = Math.toRadians(angleDeg.toDouble())
         val length = radius * hand.lengthFraction
         val tail = radius * hand.tailFraction
@@ -214,13 +238,7 @@ class AnalogClockView @JvmOverloads constructor(
         val startX = cx - tail * cos(angle).toFloat()
         val startY = cy - tail * sin(angle).toFloat()
 
-        paint.reset()
-        paint.isAntiAlias = true
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = dpToPx(hand.widthDp)
-        paint.color = parseColor(hand.color, handColor)
-        paint.strokeCap = parseCap(hand.cap)
-        canvas.drawLine(startX, startY, endX, endY, paint)
+        canvas.drawLine(startX, startY, endX, endY, handPaint)
     }
 
     private fun drawSecondHand(canvas: Canvas, cx: Float, cy: Float, radius: Float, hand: com.micahsoftdotexe.dreamingofclocks.models.SecondHandConfig, angleDeg: Float) {
@@ -233,13 +251,7 @@ class AnalogClockView @JvmOverloads constructor(
         val startX = cx - tail * cos(angle).toFloat()
         val startY = cy - tail * sin(angle).toFloat()
 
-        paint.reset()
-        paint.isAntiAlias = true
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = dpToPx(hand.widthDp)
-        paint.color = parseColor(hand.color, handColor)
-        paint.strokeCap = parseCap(hand.cap)
-        canvas.drawLine(startX, startY, endX, endY, paint)
+        canvas.drawLine(startX, startY, endX, endY, secondHandPaint)
     }
 
     private fun parseColor(hex: String?, fallback: Int): Int {

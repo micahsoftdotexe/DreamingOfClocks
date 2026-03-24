@@ -26,6 +26,7 @@ class ResizeableTextClock @JvmOverloads constructor(
     }
 
     var onTextResizeListener: OnTextResizeListener? = null
+    private val measurePaint = TextPaint()
     private var mNeedsResize = false
     private var mTextSize: Float = textSize
     private var mSavedTypeface: Typeface? = null
@@ -114,29 +115,37 @@ class ResizeableTextClock @JvmOverloads constructor(
             return
         }
 
-        // Use a copy of the current paint for measurement so we do not modify the view paint.
-        // Ensure anti-aliasing and subpixel text are enabled and disable fake bold.
-        val textPaint = TextPaint(paint).apply {
-            isAntiAlias = true
-            isSubpixelText = true
-            isFakeBoldText = false
+        // Reuse measurePaint to avoid allocations each frame
+        measurePaint.set(paint)
+        measurePaint.isAntiAlias = true
+        measurePaint.isSubpixelText = true
+        measurePaint.isFakeBoldText = false
+
+        val oldTextSize = measurePaint.textSize
+        val hi = if (maxTextSize > 0) minOf(mTextSize, maxTextSize) else mTextSize
+        var targetTextSize = hi
+
+        // Binary search for the largest size that fits within height
+        if (getTextHeight(text, measurePaint, width, hi) > height) {
+            var lo = minTextSize
+            var high = hi
+            while (high - lo > 1f) {
+                val mid = (lo + high) / 2f
+                if (getTextHeight(text, measurePaint, width, mid) > height) {
+                    high = mid
+                } else {
+                    lo = mid
+                }
+            }
+            targetTextSize = lo
         }
 
-        val oldTextSize = textPaint.textSize
-        var targetTextSize =
-            if (maxTextSize > 0) minOf(mTextSize, maxTextSize) else mTextSize
+        if (addEllipsis && targetTextSize == minTextSize
+            && getTextHeight(text, measurePaint, width, targetTextSize) > height
+        ) {
+            measurePaint.textSize = targetTextSize
 
-        var textHeight = getTextHeight(text, textPaint, width, targetTextSize)
-
-        while (textHeight > height && targetTextSize > minTextSize) {
-            targetTextSize = maxOf(targetTextSize - 2f, minTextSize)
-            textHeight = getTextHeight(text, textPaint, width, targetTextSize)
-        }
-
-        if (addEllipsis && targetTextSize == minTextSize && textHeight > height) {
-            val paintCopy = TextPaint(textPaint)
-
-            val layout = StaticLayout.Builder.obtain(text, 0, text.length, paintCopy, width)
+            val layout = StaticLayout.Builder.obtain(text, 0, text.length, measurePaint, width)
                 .setAlignment(Alignment.ALIGN_NORMAL)
                 .setLineSpacing(mSpacingAdd, mSpacingMult)
                 .setIncludePad(false)
@@ -151,11 +160,11 @@ class ResizeableTextClock @JvmOverloads constructor(
                     val start = layout.getLineStart(lastLine)
                     var end = layout.getLineEnd(lastLine)
                     var lineWidth = layout.getLineWidth(lastLine)
-                    val ellipseWidth = paintCopy.measureText(mEllipsis)
+                    val ellipseWidth = measurePaint.measureText(mEllipsis)
 
                     while (width < lineWidth + ellipseWidth && end > start) {
                         end--
-                        lineWidth = paintCopy.measureText(
+                        lineWidth = measurePaint.measureText(
                             text.subSequence(start, end + 1).toString()
                         )
                     }
@@ -180,10 +189,9 @@ class ResizeableTextClock @JvmOverloads constructor(
         width: Int,
         textSize: Float
     ): Int {
-        val paintCopy = TextPaint(paint)
-        paintCopy.textSize = textSize
+        paint.textSize = textSize
 
-        val layout = StaticLayout.Builder.obtain(source, 0, source.length, paintCopy, width)
+        val layout = StaticLayout.Builder.obtain(source, 0, source.length, paint, width)
             .setAlignment(Alignment.ALIGN_NORMAL)
             .setLineSpacing(mSpacingAdd, mSpacingMult)
             .setIncludePad(true)
