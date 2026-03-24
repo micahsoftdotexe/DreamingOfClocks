@@ -12,7 +12,7 @@ import androidx.compose.material3.Scaffold
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,7 +21,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import com.micahsoftdotexe.dreamingofclocks.ui.theme.DreamingOfClocksTheme
 
@@ -40,7 +39,7 @@ class MainActivity : ComponentActivity() {
 @PreviewScreenSizes
 @Composable
 fun DreamingOfClocksApp() {
-    var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
+    var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.SETTINGS) }
 
     NavigationSuiteScaffold(
         navigationSuiteItems = {
@@ -61,11 +60,8 @@ fun DreamingOfClocksApp() {
     ) {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
             when (currentDestination) {
-                AppDestinations.HOME -> Greeting(
-                    name = "Android",
-                    modifier = Modifier.padding(innerPadding)
-                )
                 AppDestinations.SETTINGS -> SettingsActivity(modifier = Modifier.padding(innerPadding))
+                AppDestinations.HELP -> HelpScreen(modifier = Modifier.padding(innerPadding))
             }
         }
     }
@@ -75,23 +71,7 @@ enum class AppDestinations(
     val label: String,
     val icon: ImageVector,
 ) {
-    HOME("Home", Icons.Default.Home),
     SETTINGS("Settings", Icons.Default.Settings),
+    HELP("Help", Icons.Default.Info),
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    DreamingOfClocksTheme() {
-        Greeting("Android")
-    }
-}
