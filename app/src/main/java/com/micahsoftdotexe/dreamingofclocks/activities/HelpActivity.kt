@@ -85,6 +85,12 @@ fun HelpScreen(modifier: Modifier = Modifier) {
                 BulletPoint("Show now-playing media info and next alarm")
             }
         }
+
+        Text(
+            "Weather data provided by Open-Meteo.com",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
