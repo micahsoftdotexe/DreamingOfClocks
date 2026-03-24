@@ -57,7 +57,7 @@ Once installed, enable DreamingOfClocks as your screensaver:
 ### Build from Source
 1. Clone the repository:
    ```bash
-   git clone git@github.com:micahsoftdotexe/DreamingOfClocks.git
+   git clone https://github.com/micahsoftdotexe/DreamingOfClocks
    ```
 2. Open in **Android Studio**
 3. Build and run on a device or emulator
